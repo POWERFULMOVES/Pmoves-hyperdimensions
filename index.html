@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperdimensional Functions</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/theme/dracula.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/javascript/javascript.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="sidebar-wrapper">
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <h2>Function Controls</h2>
+                <button id="toggleSidebar">«</button>
+            </div>
+
+            <div id="controlsBody">
+                <div class="section">
+                    <div class="section-header" id="visualsHeader">
+                        <span class="section-caret" id="visualsCaret">▶</span>
+                        <span class="section-title">Display</span>
+                    </div>
+                    <div class="section-body" id="visualsBody" style="display: none;">
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label>
+                                    <input type="checkbox" id="autoRotate">
+                                    Auto rotate
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label for="showAxes">
+                                    <input type="checkbox" id="showAxes">
+                                    Show axes
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label>
+                                    <input type="checkbox" id="showSurface" checked>
+                                    Show surface
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label>
+                                    <input type="checkbox" id="showWireframe">
+                                    Show wireframe
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-row">
+                            <div class="control-group-inline">
+                                <label for="dirIntensity">Light intensity</label>
+                                <input type="number" id="dirIntensity" min="0" max="3" step="0.1" value="1.0">
+                            </div>
+                            <div class="control-group-inline">
+                                <label for="shininess">Shininess</label>
+                                <input type="number" id="shininess" min="0" max="2000" step="10" value="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title parameters-title">Parameters</div>
+                <div class="control-row">
+                    <div class="control-group-inline">
+                        <label for="uMin">U min</label>
+                        <input type="number" id="uMin" min="0" max="2" step="0.01" value="0">
+                    </div>
+                    <div class="control-group-inline">
+                        <label for="uMax">max</label>
+                        <input type="number" id="uMax" min="0" max="2" step="0.01" value="1">
+                    </div>
+                    <div class="control-group-inline">
+                        <label for="uSegs">resolution</label>
+                        <input type="number" id="uSegs" min="10" max="500" value="150">
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <div class="control-group-inline">
+                        <label for="vMin">V min</label>
+                        <input type="number" id="vMin" min="0" max="2" step="0.01" value="0">
+                    </div>
+                    <div class="control-group-inline">
+                        <label for="vMax">max</label>
+                        <input type="number" id="vMax" min="0" max="2" step="0.01" value="1">
+                    </div>
+                    <div class="control-group-inline">
+                        <label for="vSegs">resolution</label>
+                        <input type="number" id="vSegs" min="3" max="500" value="150">
+                    </div>
+                </div>
+
+                <div id="paramExtras"></div>
+                <div class="control-row">
+                    <div class="control-group">
+                        <button id="addParam">Add Parameter</button>
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <div class="control-group">
+                        <label for="surfaceEditor">Surface function</label>
+                        <textarea id="surfaceEditor" spellcheck="false"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sidebar-footer">
+                <div class="button-row">
+                    <button id="applySurface">▶ Apply</button>
+                    <button id="copySurface">📋 Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="sidebar-resizer"></div>
+    </div>
+
+    <div id="viewport">
+        <button id="resetCamera" class="floating-button" title="Reset camera">📷</button>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { ParametricGeometry } from 'three/addons/geometries/ParametricGeometry.js';
+
+        // --- Parameters ---
+        const params = {
+            uMin: 0,
+            uMax: 1,
+            vMin: 0,
+            vMax: 1,
+            uSegs: 150,
+            vSegs: 150
+        };
+
+        // --- The Parametric Functions ---
+        
+        // Combined function that returns everything
+        // x, y, z: position
+        // r, g, b: color [0,1]
+        // a: alpha [0,1] (optional, defaults to 1)
+ 
+// (weird indentation to make it look better in the editor)
+function surface(input) {
+    const u = input.u;
+    const v = input.v;
+    const t = input.t;
+ 
+    // Map u to spiral angle (3 full turns)
+    const angleLimit = 6 * Math.PI;
+    const spiralAngle = u * angleLimit;
+     
+    // Map v to tube angle
+    const tubeAngle = v * 2 * Math.PI;
+ 
+    // Nautilus / Logarithmic Spiral parameters
+    const baseRadius = 1; 
+    const k = 0.15; 
+    const R = baseRadius * Math.exp(k * spiralAngle);
+    
+    // Tube radius grows with the spiral
+    const growthFactor = Math.exp(k * 2 * Math.PI * t);
+    const tubeRadius = R * (growthFactor - 1) * 0.5 * 0.95; 
+     
+    const x = (R + tubeRadius * Math.cos(tubeAngle)) * Math.cos(spiralAngle);
+    const y = (R + tubeRadius * Math.cos(tubeAngle)) * Math.sin(spiralAngle);
+    const z = tubeRadius * Math.sin(tubeAngle);
+ 
+    // Coloring Logic
+    const stripeFrequency = 10; 
+    const stripeIntensity = Math.pow(Math.sin(spiralAngle * stripeFrequency), 4);
+     
+    const baseR = 0.95, baseG = 0.90, baseB = 0.80;
+    const stripeR = 0.6, stripeG = 0.3, stripeB = 0.1;
+     
+    const r = baseR * (1 - stripeIntensity) + stripeR * stripeIntensity;
+    const g = baseG * (1 - stripeIntensity) + stripeG * stripeIntensity;
+    const b = baseB * (1 - stripeIntensity) + stripeB * stripeIntensity;
+    const a = 1.0;
+     
+    return { x, y, z, r, g, b, a };
+ }
+
+        let surfaceFn = surface;
+        const surfaceInput = { u: 0, v: 0 };
+        const animatedParams = [];
+
+        function normalizeSurfaceOutput(raw) {
+            const clamp01 = (v) => {
+                if (typeof v !== 'number' || !Number.isFinite(v)) return 1;
+                if (v < 0) return 0;
+                if (v > 1) return 1;
+                return v;
+            };
+            const safePos = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+
+            const data = raw || {};
+            const x = safePos(data.x);
+            const y = safePos(data.y);
+            const z = safePos(data.z);
+
+            const r = clamp01(data.r);
+            const g = clamp01(data.g);
+            const b = clamp01(data.b);
+            const a = clamp01(data.a != null ? data.a : 1);
+
+            return { x, y, z, r, g, b, a };
+        }
+
+        function formatScalar(value) {
+            if (typeof value !== 'number' || !Number.isFinite(value)) return '';
+            return Number(value).toFixed(5).replace(/\.?0+$/, '');
+        }
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
+        camera.position.set(35, 25, 35);
+        const initialCameraPosition = camera.position.clone();
+        const initialTarget = new THREE.Vector3(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const viewport = document.getElementById('viewport');
+        viewport.appendChild(renderer.domElement);
+
+        function resizeRendererToViewport() {
+            const rect = viewport.getBoundingClientRect();
+            const width = rect.width || window.innerWidth;
+            const height = rect.height || window.innerHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        }
+
+        resizeRendererToViewport();
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.maxDistance = 4000;
+        controls.target.copy(initialTarget);
+
+        // --- Geometry Generation ---
+        
+        let mesh;
+        let wireframe;
+        let geometry;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        
+        let lastUSegs = -1;
+        let lastVSegs = -1;
+        
+        // This function is passed to ParametricGeometry constructor.
+        // It sets initial positions. We don't rely on it for colors or updates.
+        function meshFunction(u, v, target) {
+            const u_norm = params.uMin + u * (params.uMax - params.uMin);
+            const v_norm = params.vMin + v * (params.vMax - params.vMin);
+            surfaceInput.u = u_norm;
+            surfaceInput.v = v_norm;
+            // We only need position here
+            const out = normalizeSurfaceOutput(surfaceFn(surfaceInput));
+            target.set(out.x, out.y, out.z);
+        }
+
+        function getCurrentShininess() {
+            const input = document.getElementById('shininess');
+            if (!input) return 100;
+            const v = parseFloat(input.value);
+            return Number.isNaN(v) ? 100 : v;
+        }
+
+        function updateSurfaceExtraParams() {
+            // Clear existing extra keys (keep u, v)
+            Object.keys(surfaceInput).forEach((key) => {
+                if (key !== 'u' && key !== 'v') {
+                    delete surfaceInput[key];
+                }
+            });
+
+            const container = document.getElementById('paramExtras');
+            if (!container) return;
+            const rows = container.querySelectorAll('.param-row');
+            const identifier = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
+            rows.forEach((row) => {
+                const nameInput = row.querySelector('.param-name');
+                const valueInput = row.querySelector('.param-value');
+                if (!nameInput || !valueInput) return;
+
+                const name = nameInput.value.trim();
+                if (!identifier.test(name)) return;
+
+                const val = parseFloat(valueInput.value);
+                if (Number.isNaN(val)) return;
+
+                surfaceInput[name] = val;
+            });
+        }
+
+        function updateGeometry() {
+            updateSurfaceExtraParams();
+            
+            const uSegs = params.uSegs;
+            const vSegs = params.vSegs;
+            const needRebuild = !geometry || uSegs !== lastUSegs || vSegs !== lastVSegs;
+
+            if (needRebuild) {
+                if (mesh) scene.remove(mesh);
+                if (wireframe) {
+                    scene.remove(wireframe);
+                    wireframe.geometry.dispose();
+                    wireframe.material.dispose();
+                    wireframe = null;
+                }
+                if (geometry) geometry.dispose();
+
+                // Create new geometry
+                geometry = new ParametricGeometry(meshFunction, uSegs, vSegs);
+                lastUSegs = uSegs;
+                lastVSegs = vSegs;
+
+                // Create color attribute (RGBA)
+                const count = geometry.attributes.position.count;
+                geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 4), 4));
+
+                // Create Material
+                const material = new THREE.MeshPhongMaterial({
+                    vertexColors: true,
+                    shininess: getCurrentShininess(),
+                    transparent: true,
+                    opacity: 1.0,
+                    side: THREE.DoubleSide
+                });
+
+                mesh = new THREE.Mesh(geometry, material);
+                scene.add(mesh);
+
+                const wireMat = new THREE.LineBasicMaterial({
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.2
+                });
+                wireframe = new THREE.LineSegments(geometry, wireMat);
+                scene.add(wireframe);
+
+                const surfaceToggle = document.getElementById('showSurface');
+                const wireToggle = document.getElementById('showWireframe');
+                mesh.visible = surfaceToggle ? surfaceToggle.checked : true;
+                wireframe.visible = wireToggle ? wireToggle.checked : false;
+            }
+
+            // Update Loop (Runs every time, whether rebuilt or not)
+            const positions = geometry.attributes.position;
+            const colors = geometry.attributes.color;
+            const uMin = params.uMin;
+            const uMax = params.uMax;
+            const vMin = params.vMin;
+            const vMax = params.vMax;
+            
+            let idx = 0;
+            // ParametricGeometry iterates stacks (v) then slices (u)
+            for (let i = 0; i <= vSegs; i++) {
+                const v = i / vSegs;
+                const v_norm = vMin + v * (vMax - vMin);
+                
+                for (let j = 0; j <= uSegs; j++) {
+                    const u = j / uSegs;
+                    const u_norm = uMin + u * (uMax - uMin);
+
+                    surfaceInput.u = u_norm;
+                    surfaceInput.v = v_norm;
+
+                    const out = normalizeSurfaceOutput(surfaceFn(surfaceInput));
+
+                    positions.setXYZ(idx, out.x, out.y, out.z);
+                    colors.setXYZW(idx, out.r, out.g, out.b, out.a);
+                    
+                    idx++;
+                }
+            }
+
+            positions.needsUpdate = true;
+            colors.needsUpdate = true;
+            geometry.computeVertexNormals();
+        }
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(20, 30, 10);
+        scene.add(dirLight);
+        
+        const pointLight = new THREE.PointLight(0xffaa00, 0.5);
+        pointLight.position.set(-15, -10, 10);
+        scene.add(pointLight);
+
+        const spotLight = new THREE.SpotLight(0xffddaa, 0.6, 120, Math.PI / 6, 0.4);
+        spotLight.position.set(0, 40, 20);
+        spotLight.target.position.set(0, 0, 0);
+        scene.add(spotLight);
+        scene.add(spotLight.target);
+
+        const axes = new THREE.AxesHelper(30);
+        scene.add(axes);
+        axes.visible = false;
+
+        // Click marker for camera target feedback
+        const clickMarkerGeo = new THREE.SphereGeometry(0.6, 16, 16);
+        const clickMarkerMat = new THREE.MeshBasicMaterial({
+            color: 0xffff66,
+            transparent: true,
+            opacity: 0.0
+        });
+        const clickMarker = new THREE.Mesh(clickMarkerGeo, clickMarkerMat);
+        clickMarker.visible = false;
+        scene.add(clickMarker);
+
+        let markerStartTime = 0;
+        const markerDuration = 400; // ms
+
+        // Camera tweening state
+        let isCameraTweening = false;
+        let camTweenStart = 0;
+        const camTweenDuration = 600; // ms
+        const camStartPos = new THREE.Vector3();
+        const camStartTarget = new THREE.Vector3();
+        const camEndPos = new THREE.Vector3();
+        const camEndTarget = new THREE.Vector3();
+
+        // Geometry update scheduling
+        let geometryNeedsUpdate = false;
+        function scheduleGeometryUpdate() {
+            if (geometryNeedsUpdate) return;
+            geometryNeedsUpdate = true;
+            requestAnimationFrame(() => {
+                geometryNeedsUpdate = false;
+                updateGeometry();
+            });
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const now = performance.now();
+
+            // Animate camera tween
+            if (isCameraTweening) {
+                const tRaw = (now - camTweenStart) / camTweenDuration;
+                const t = tRaw >= 1 ? 1 : tRaw;
+                const smoothT = t * t * (3 - 2 * t); // smoothstep easing
+
+                camera.position.lerpVectors(camStartPos, camEndPos, smoothT);
+                controls.target.lerpVectors(camStartTarget, camEndTarget, smoothT);
+
+                if (t >= 1) {
+                    isCameraTweening = false;
+                }
+            }
+
+            // Animate click marker
+            if (clickMarker.visible) {
+                const mRaw = (now - markerStartTime) / markerDuration;
+                if (mRaw >= 1) {
+                    clickMarker.visible = false;
+                } else {
+                    const inv = 1 - mRaw;
+                    clickMarkerMat.opacity = inv;
+                    const scale = 1 + 0.5 * mRaw;
+                    clickMarker.scale.set(scale, scale, scale);
+                }
+            }
+
+            // Animate parameter playback
+            let anyParamChanged = false;
+            if (animatedParams.length > 0) {
+                animatedParams.forEach((state) => {
+                    if (!state.playing) {
+                        state.lastTime = now;
+                        return;
+                    }
+                    const runtime = parseFloat(state.timeInput.value);
+                    const step = parseFloat(state.stepInput.value);
+                    let minVal = parseFloat(state.minInput.value);
+                    let maxVal = parseFloat(state.maxInput.value);
+                    if (!Number.isFinite(runtime) || runtime <= 0) {
+                        state.lastTime = now;
+                        return;
+                    }
+                    if (!Number.isFinite(minVal) || !Number.isFinite(maxVal) || maxVal <= minVal) {
+                        state.lastTime = now;
+                        return;
+                    }
+                    const dtMs = now - state.lastTime;
+                    if (dtMs <= 0) return;
+                    state.lastTime = now;
+                    const dt = dtMs / 1000;
+                    const loopDuration = runtime; // seconds for min->max->min
+                    const range = maxVal - minVal;
+                    if (range <= 0) return;
+
+                    let phase = state.phase + dt / loopDuration;
+                    phase = phase - Math.floor(phase); // wrap 0..1
+                    state.phase = phase;
+
+                    let value;
+                    if (phase <= 0.5) {
+                        value = minVal + (phase * 2) * range;
+                    } else {
+                        value = maxVal - ((phase * 2 - 1) * range);
+                    }
+
+                    const s = Number.isFinite(step) && step > 0 ? step : (range / 100);
+                    let snapped = minVal + Math.round((value - minVal) / s) * s;
+                    if (snapped < minVal) snapped = minVal;
+                    if (snapped > maxVal) snapped = maxVal;
+
+                    state.valueInput.value = formatScalar(snapped);
+                    state.sliderInput.value = String(snapped);
+                    anyParamChanged = true;
+                });
+            }
+
+            if (anyParamChanged) {
+                scheduleGeometryUpdate();
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', resizeRendererToViewport);
+        
+        // --- UI Logic ---
+        function setupUI() {
+            const ids = ['uMin', 'uMax', 'vMin', 'vMax'];
+            
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                el.addEventListener('input', (e) => {
+                    const raw = e.target.value;
+                    if (!raw.length) return;
+                    const value = parseFloat(raw);
+                    if (Number.isNaN(value)) return;
+                    params[id] = value;
+                    scheduleGeometryUpdate();
+                });
+            });
+
+            const axesCheckbox = document.getElementById('showAxes');
+            axesCheckbox.addEventListener('change', (e) => {
+                axes.visible = e.target.checked;
+            });
+
+            const surfaceToggle = document.getElementById('showSurface');
+            const wireToggle = document.getElementById('showWireframe');
+            const dirIntensity = document.getElementById('dirIntensity');
+            const shininessInput = document.getElementById('shininess');
+            const autoRotateCheckbox = document.getElementById('autoRotate');
+            const addParamBtn = document.getElementById('addParam');
+
+            surfaceToggle.addEventListener('change', (e) => {
+                if (mesh) mesh.visible = e.target.checked;
+            });
+
+            wireToggle.addEventListener('change', (e) => {
+                if (wireframe) wireframe.visible = e.target.checked;
+            });
+
+            dirIntensity.addEventListener('input', (e) => {
+                const v = parseFloat(e.target.value);
+                if (!Number.isNaN(v)) {
+                    dirLight.intensity = v;
+                }
+            });
+
+            shininessInput.addEventListener('input', () => {
+                if (!mesh || !Array.isArray(mesh.material) && !mesh.material) return;
+                const value = getCurrentShininess();
+                if (Array.isArray(mesh.material)) {
+                    mesh.material.forEach(m => { if (m && 'shininess' in m) m.shininess = value; });
+                } else if ('shininess' in mesh.material) {
+                    mesh.material.shininess = value;
+                }
+            });
+            
+            autoRotateCheckbox.addEventListener('change', (e) => {
+                controls.autoRotate = e.target.checked;
+            });
+            
+            function attachResolutionHandlers(inputEl, key, minVal, maxVal) {
+                function applyResolution() {
+                    const raw = inputEl.value;
+                    if (!raw.length) return;
+                    let value = parseInt(raw, 10);
+                    if (Number.isNaN(value)) return;
+                    if (value < minVal) value = minVal;
+                    if (value > maxVal) value = maxVal;
+                    inputEl.value = value;
+                    params[key] = value;
+                    scheduleGeometryUpdate();
+                }
+
+                ['blur', 'change'].forEach(evt => {
+                    inputEl.addEventListener(evt, applyResolution);
+                });
+
+                inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        applyResolution();
+                    }
+                });
+            }
+
+            const uSegsInput = document.getElementById('uSegs');
+            const vSegsInput = document.getElementById('vSegs');
+            attachResolutionHandlers(uSegsInput, 'uSegs', 10, 500);
+            attachResolutionHandlers(vSegsInput, 'vSegs', 3, 500);
+
+            const visualsHeader = document.getElementById('visualsHeader');
+            const visualsBody = document.getElementById('visualsBody');
+            const visualsCaret = document.getElementById('visualsCaret');
+
+            visualsHeader.addEventListener('click', () => {
+                const isHidden = visualsBody.style.display === 'none';
+                visualsBody.style.display = isHidden ? '' : 'none';
+                visualsCaret.textContent = isHidden ? '▼' : '▶';
+            });
+
+            function addParameterRow() {
+                const container = document.getElementById('paramExtras');
+                if (!container) return;
+
+                const section = document.createElement('div');
+                section.className = 'section param-section';
+
+                const body = document.createElement('div');
+                body.className = 'section-body';
+
+                const row = document.createElement('div');
+                row.className = 'control-row param-row';
+
+                const nameGroup = document.createElement('div');
+                nameGroup.className = 'control-group-inline';
+                const nameLabel = document.createElement('label');
+                nameLabel.textContent = 'name';
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.className = 'param-name';
+                nameGroup.appendChild(nameLabel);
+                nameGroup.appendChild(nameInput);
+
+                const eqSpan = document.createElement('span');
+                eqSpan.textContent = '=';
+                eqSpan.style.alignSelf = 'flex-end';
+                eqSpan.style.color = '#aaa';
+
+                const valueGroup = document.createElement('div');
+                valueGroup.className = 'control-group-inline';
+                const valueLabel = document.createElement('label');
+                valueLabel.textContent = 'value';
+                const valueInput = document.createElement('input');
+                valueInput.type = 'number';
+                valueInput.step = '0.01';
+                valueInput.className = 'param-value';
+                valueInput.value = '1';
+                valueGroup.appendChild(valueLabel);
+                valueGroup.appendChild(valueInput);
+
+                row.appendChild(nameGroup);
+                row.appendChild(eqSpan);
+                row.appendChild(valueGroup);
+
+                const sliderRow = document.createElement('div');
+                sliderRow.className = 'control-row';
+
+                const minGroup = document.createElement('div');
+                minGroup.className = 'control-group-inline';
+                const minLabel = document.createElement('label');
+                minLabel.textContent = 'min';
+                const minInput = document.createElement('input');
+                minInput.type = 'number';
+                minInput.step = '0.01';
+                minInput.className = 'param-min';
+                minGroup.appendChild(minLabel);
+                minGroup.appendChild(minInput);
+
+                const sliderGroup = document.createElement('div');
+                sliderGroup.className = 'control-group-inline param-slider-group';
+                const sliderLabel = document.createElement('label');
+                sliderLabel.textContent = '';
+                const sliderInput = document.createElement('input');
+                sliderInput.type = 'range';
+                sliderInput.className = 'param-slider';
+                sliderGroup.appendChild(sliderLabel);
+                sliderGroup.appendChild(sliderInput);
+
+                const maxGroup = document.createElement('div');
+                maxGroup.className = 'control-group-inline';
+                const maxLabel = document.createElement('label');
+                maxLabel.textContent = 'max';
+                const maxInput = document.createElement('input');
+                maxInput.type = 'number';
+                maxInput.step = '0.01';
+                maxInput.className = 'param-max';
+                maxGroup.appendChild(maxLabel);
+                maxGroup.appendChild(maxInput);
+
+                sliderRow.appendChild(minGroup);
+                sliderRow.appendChild(sliderGroup);
+
+                const stepGroup = document.createElement('div');
+                stepGroup.className = 'control-group-inline param-step-group';
+                const stepLabel = document.createElement('label');
+                stepLabel.textContent = 'step';
+                const stepInput = document.createElement('input');
+                stepInput.type = 'number';
+                stepInput.step = '0.001';
+                stepInput.className = 'param-step';
+                stepInput.value = '0.01';
+                stepGroup.appendChild(stepLabel);
+                stepGroup.appendChild(stepInput);
+
+                const playGroup = document.createElement('div');
+                playGroup.className = 'control-group param-play-group';
+                const playButton = document.createElement('button');
+                playButton.type = 'button';
+                playButton.textContent = '▶';
+                playGroup.appendChild(playButton);
+
+                sliderRow.appendChild(maxGroup);
+                sliderRow.appendChild(stepGroup);
+
+                const playRow = document.createElement('div');
+                playRow.className = 'control-row';
+                const timeGroup = document.createElement('div');
+                timeGroup.className = 'control-group-inline param-time-group';
+                const timeLabel = document.createElement('label');
+                timeLabel.textContent = 'runtime (s)';
+                const timeInput = document.createElement('input');
+                timeInput.type = 'number';
+                timeInput.step = '0.1';
+                timeInput.className = 'param-time';
+                timeInput.value = '8';
+                timeGroup.appendChild(timeLabel);
+                timeGroup.appendChild(timeInput);
+
+                playRow.appendChild(playGroup);
+                playRow.appendChild(timeGroup);
+
+                body.appendChild(row);
+                body.appendChild(sliderRow);
+                body.appendChild(playRow);
+                section.appendChild(body);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'param-remove';
+                removeBtn.textContent = '✕';
+                section.appendChild(removeBtn);
+
+                container.appendChild(section);
+
+                // Compute default unique name: t, t1, t2, ...
+                const existingNames = new Set(['u', 'v']);
+                Object.keys(params).forEach(k => existingNames.add(k));
+                container.querySelectorAll('.param-name').forEach(input => {
+                    const n = input.value.trim();
+                    if (n) existingNames.add(n);
+                });
+                let base = 't';
+                let candidate = base;
+                let idx = 1;
+                while (existingNames.has(candidate)) {
+                    candidate = base + idx;
+                    idx++;
+                }
+                nameInput.value = candidate;
+                nameInput.dataset.prevName = candidate;
+
+                function validateAndApplyName() {
+                    const raw = nameInput.value.trim();
+                    if (!raw) {
+                        nameInput.value = nameInput.dataset.prevName || '';
+                        return;
+                    }
+                    // Ensure valid identifier and uniqueness via quick eval
+                    try {
+                        new Function(`let ${raw};`);
+                    } catch {
+                        alert('Parameter name must be a valid JS identifier.');
+                        nameInput.value = nameInput.dataset.prevName || '';
+                        return;
+                    }
+                    const allNames = [];
+                    container.querySelectorAll('.param-name').forEach(input => {
+                        if (input === nameInput) return;
+                        const n = input.value.trim();
+                        if (n) allNames.push(n);
+                    });
+                    const reserved = new Set(['u', 'v']);
+                    Object.keys(params).forEach(k => reserved.add(k));
+                    if (reserved.has(raw) || allNames.includes(raw)) {
+                        alert('Parameter name must be unique.');
+                        nameInput.value = nameInput.dataset.prevName || '';
+                        return;
+                    }
+                    nameInput.dataset.prevName = raw;
+                    scheduleGeometryUpdate();
+                }
+
+                nameInput.addEventListener('focus', () => {
+                    nameInput.dataset.prevName = nameInput.value;
+                });
+                nameInput.addEventListener('blur', validateAndApplyName);
+                nameInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        validateAndApplyName();
+                        nameInput.blur();
+                    }
+                });
+
+                function applyValue() {
+                    const valRaw = valueInput.value;
+                    if (!valRaw.length) return;
+                    const num = parseFloat(valRaw);
+                    if (Number.isNaN(num)) return;
+                    valueInput.value = formatScalar(num);
+                    sliderInput.value = String(num);
+                    scheduleGeometryUpdate();
+                }
+
+                ['blur', 'change'].forEach(evt => {
+                    valueInput.addEventListener(evt, applyValue);
+                });
+                valueInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        applyValue();
+                        valueInput.blur();
+                    }
+                });
+
+                removeBtn.addEventListener('click', () => {
+                    const idx = animatedParams.indexOf(state);
+                    if (idx !== -1) animatedParams.splice(idx, 1);
+                    section.remove();
+                    scheduleGeometryUpdate();
+                });
+
+                // slider/min/max/step wiring
+                function parseNum(el, fallback) {
+                    const raw = el.value;
+                    if (!raw.length) return fallback;
+                    const v = parseFloat(raw);
+                    return Number.isNaN(v) ? fallback : v;
+                }
+
+                function applyMinMax(fromInput) {
+                    let minVal = parseNum(minInput, -1);
+                    let maxVal = parseNum(maxInput, 1);
+                    if (fromInput === minInput && minVal >= maxVal) {
+                        maxVal = minVal + 1;
+                    } else if (fromInput === maxInput && maxVal <= minVal) {
+                        minVal = maxVal - 1;
+                    }
+                    minInput.value = minVal;
+                    maxInput.value = maxVal;
+                    sliderInput.min = String(minVal);
+                    sliderInput.max = String(maxVal);
+
+                    let val = parseNum(valueInput, 0);
+                    if (val < minVal) val = minVal;
+                    if (val > maxVal) val = maxVal;
+                    valueInput.value = formatScalar(val);
+                    sliderInput.value = String(val);
+                    scheduleGeometryUpdate();
+                }
+
+                function applyStep() {
+                    const stepVal = parseNum(stepInput, 0.1);
+                    sliderInput.step = String(stepVal);
+                }
+
+                function applyMin() {
+                    applyMinMax(minInput);
+                }
+                function applyMax() {
+                    applyMinMax(maxInput);
+                }
+
+                function initSliderDefaults() {
+                    const val = parseNum(valueInput, 1);
+                    minInput.value = formatScalar(val - 1);
+                    maxInput.value = formatScalar(val + 1);
+                    sliderInput.min = minInput.value;
+                    sliderInput.max = maxInput.value;
+                    sliderInput.value = String(val);
+                    sliderInput.step = stepInput.value;
+                }
+
+                initSliderDefaults();
+
+                ['blur', 'change'].forEach(evt => {
+                    minInput.addEventListener(evt, applyMin);
+                    maxInput.addEventListener(evt, applyMax);
+                    stepInput.addEventListener(evt, applyStep);
+                });
+
+                minInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        applyMin();
+                        minInput.blur();
+                    }
+                });
+                maxInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        applyMax();
+                        maxInput.blur();
+                    }
+                });
+                stepInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        applyStep();
+                        stepInput.blur();
+                    }
+                });
+
+                sliderInput.addEventListener('input', () => {
+                    const v = parseNum(sliderInput, 0);
+                    valueInput.value = formatScalar(v);
+                    scheduleGeometryUpdate();
+                });
+
+                const state = {
+                    nameInput,
+                    valueInput,
+                    minInput,
+                    maxInput,
+                    sliderInput,
+                    stepInput,
+                    timeInput,
+                    playButton,
+                    phase: 0,
+                    playing: false,
+                    lastTime: performance.now()
+                };
+                animatedParams.push(state);
+
+                playButton.addEventListener('click', () => {
+                    state.playing = !state.playing;
+
+                    if (state.playing) {
+                        const runtime = parseFloat(state.timeInput.value);
+                        let minVal = parseNum(minInput, -1);
+                        let maxVal = parseNum(maxInput, 1);
+                        let current = parseNum(valueInput, minVal);
+                        if (maxVal <= minVal) {
+                            maxVal = minVal + 1;
+                        }
+                        const range = maxVal - minVal;
+                        current = Math.min(Math.max(current, minVal), maxVal);
+                        const tUp = (current - minVal) / range; // 0..1
+                        const clampedUp = Math.min(Math.max(tUp, 0), 1);
+                        state.phase = 0.5 * clampedUp;
+                        state.lastTime = performance.now();
+                    }
+
+                    playButton.textContent = state.playing ? '⏸' : '▶';
+                });
+            }
+
+            addParamBtn.addEventListener('click', addParameterRow);
+            // add a default parameter (t) on load
+            addParameterRow();
+
+            const surfaceTextArea = document.getElementById('surfaceEditor');
+            const applySurfaceBtn = document.getElementById('applySurface');
+            const copySurfaceBtn = document.getElementById('copySurface');
+
+            const editor = CodeMirror.fromTextArea(surfaceTextArea, {
+                mode: 'javascript',
+                theme: 'dracula',
+                lineNumbers: true,
+                tabSize: 2,
+                indentUnit: 4,
+                lineWrapping: false,
+                viewportMargin: Infinity
+            });
+            editor.setSize(null, 'auto');
+            editor.setValue(surface.toString());
+
+            function applySurface() {
+                const code = editor.getValue();
+                try {
+                    const factory = new Function(code + '; return surface;');
+                    const fn = factory();
+                    if (typeof fn !== 'function') {
+                        throw new Error('surface is not a function');
+                    }
+                    surfaceFn = fn;
+                    updateGeometry();
+                } catch (err) {
+                    console.error(err);
+                    alert('Error in surface function: ' + err.message);
+                }
+            }
+
+            applySurfaceBtn.addEventListener('click', applySurface);
+
+            editor.addKeyMap({
+                'Ctrl-Enter': function(cm) {
+                    applySurface();
+                }
+            });
+
+            copySurfaceBtn.addEventListener('click', async () => {
+                const code = editor.getValue();
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(code);
+                    } else {
+                        const temp = document.createElement('textarea');
+                        temp.value = code;
+                        document.body.appendChild(temp);
+                        temp.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(temp);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Failed to copy to clipboard: ' + err.message);
+                }
+            });
+
+            const resetButton = document.getElementById('resetCamera');
+            resetButton.addEventListener('click', () => {
+                camera.position.copy(initialCameraPosition);
+                controls.target.copy(initialTarget);
+                controls.update();
+                resizeRendererToViewport();
+            });
+
+            const sidebarWrapper = document.getElementById('sidebar-wrapper');
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('toggleSidebar');
+            let lastSidebarWidth = sidebar.getBoundingClientRect().width;
+
+            toggle.addEventListener('click', () => {
+                const willCollapse = !sidebarWrapper.classList.contains('collapsed');
+
+                if (willCollapse) {
+                    // Cache current width, then let CSS collapse to minimal
+                    lastSidebarWidth = sidebar.getBoundingClientRect().width;
+                    sidebarWrapper.classList.add('collapsed');
+                    toggle.textContent = '»';
+                    sidebar.style.width = '';
+                } else {
+                    // Restore previous width when expanding
+                    sidebarWrapper.classList.remove('collapsed');
+                    toggle.textContent = '«';
+                    if (lastSidebarWidth && Number.isFinite(lastSidebarWidth)) {
+                        sidebar.style.width = lastSidebarWidth + 'px';
+                    }
+                }
+
+                resizeRendererToViewport();
+            });
+
+            const resizer = document.getElementById('sidebar-resizer');
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
+            const minWidth = 200;
+            let maxWidth = Infinity;
+
+            resizer.addEventListener('mousedown', (e) => {
+                if (sidebar.classList.contains('collapsed')) return;
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = sidebar.getBoundingClientRect().width;
+                const totalWidth = document.body.clientWidth || window.innerWidth;
+                maxWidth = Math.max(minWidth, totalWidth - 40);
+                document.body.classList.add('resizing-sidebar');
+                e.preventDefault();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const dx = e.clientX - startX;
+                let newWidth = startWidth + dx;
+                if (newWidth < minWidth) newWidth = minWidth;
+                if (newWidth > maxWidth) newWidth = maxWidth;
+                sidebar.style.width = newWidth + 'px';
+                lastSidebarWidth = newWidth;
+                resizeRendererToViewport();
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (!isResizing) return;
+                isResizing = false;
+                document.body.classList.remove('resizing-sidebar');
+            });
+
+            renderer.domElement.addEventListener('dblclick', (event) => {
+                const rect = renderer.domElement.getBoundingClientRect();
+                const x = (event.clientX - rect.left) / rect.width;
+                const y = (event.clientY - rect.top) / rect.height;
+                mouse.set(x * 2 - 1, -(y * 2 - 1));
+
+                raycaster.setFromCamera(mouse, camera);
+                if (!mesh) return;
+                const intersects = raycaster.intersectObject(mesh, true);
+                if (!intersects.length) return;
+
+                const point = intersects[0].point.clone();
+
+                // Show marker at click point
+                clickMarker.position.copy(point);
+                clickMarker.scale.set(1, 1, 1);
+                clickMarker.visible = true;
+                clickMarkerMat.opacity = 1.0;
+                markerStartTime = performance.now();
+
+                // Setup camera tween
+                const offset = camera.position.clone().sub(controls.target);
+                camStartPos.copy(camera.position);
+                camStartTarget.copy(controls.target);
+                camEndTarget.copy(point);
+                camEndPos.copy(point.clone().add(offset));
+                camTweenStart = performance.now();
+                isCameraTweening = true;
+            });
+        }
+
+        setupUI();
+        updateGeometry();
+        animate();
+    </script>
+</body>
+</html>
+
