@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/theme/dracula.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.0.0/math.min.js"></script>
     <script type="importmap">
         {
             "imports": {
@@ -95,11 +96,11 @@
                         <div class="control-row">
                             <div class="control-group-inline">
                                 <label for="uMin">U min</label>
-                                <input type="number" id="uMin" min="0" max="2" step="0.01" value="0">
+                                <input type="text" id="uMin" inputmode="decimal" value="0">
                             </div>
                             <div class="control-group-inline">
                                 <label for="uMax">max</label>
-                                <input type="number" id="uMax" min="0" max="2" step="0.01" value="1">
+                                <input type="text" id="uMax" inputmode="decimal" value="1">
                             </div>
                             <div class="control-group-inline">
                                 <label for="uSegs">resolution</label>
@@ -110,11 +111,11 @@
                         <div class="control-row">
                             <div class="control-group-inline">
                                 <label for="vMin">V min</label>
-                                <input type="number" id="vMin" min="0" max="2" step="0.01" value="0">
+                                <input type="text" id="vMin" inputmode="decimal" value="0">
                             </div>
                             <div class="control-group-inline">
                                 <label for="vMax">max</label>
-                                <input type="number" id="vMax" min="0" max="2" step="0.01" value="1">
+                                <input type="text" id="vMax" inputmode="decimal" value="1">
                             </div>
                             <div class="control-group-inline">
                                 <label for="vSegs">resolution</label>
@@ -123,6 +124,14 @@
                         </div>
 
                         <div id="paramExtras"></div>
+                        <div class="control-row" id="globalParamControls" style="display: none;">
+                            <div class="control-group-inline">
+                                <button id="playAllParams">▶ Play All</button>
+                            </div>
+                            <div class="control-group-inline">
+                                <button id="pauseAllParams">⏸ Pause All</button>
+                            </div>
+                        </div>
                         <div class="control-row">
                             <div class="control-group">
                                 <button id="addParam">Add Parameter</button>
@@ -701,15 +710,55 @@ function surface(input) {
         function setupUI() {
             const ids = ['uMin', 'uMax', 'vMin', 'vMax'];
             
-            ids.forEach(id => {
+            function evaluateMathExpression(raw) {
+                const expr = String(raw || '').trim();
+                if (!expr.length) return null;
+                if (!window.math || typeof window.math.evaluate !== 'function') return null;
+                const out = window.math.evaluate(expr);
+                const num = typeof out === 'number' ? out : Number(out);
+                return Number.isFinite(num) ? num : null;
+            }
+
+            function applyUvBoundFromInput(id) {
                 const el = document.getElementById(id);
-                el.addEventListener('input', (e) => {
-                    const raw = e.target.value;
-                    if (!raw.length) return;
-                    const value = parseFloat(raw);
-                    if (Number.isNaN(value)) return;
-                    params[id] = value;
-                    scheduleGeometryUpdate();
+                if (!el) return;
+
+                const raw = String(el.value || '').trim();
+                const evaluated = evaluateMathExpression(raw);
+
+                const isMin = id === 'uMin' || id === 'vMin';
+                const axis = id[0]; // 'u' | 'v'
+                const otherId = axis + (isMin ? 'Max' : 'Min');
+                const otherEl = document.getElementById(otherId);
+                const otherVal = otherEl ? evaluateMathExpression(otherEl.value) : null;
+
+                let value;
+                if (evaluated == null) {
+                    if (otherVal != null) {
+                        value = isMin ? (otherVal - 1) : (otherVal + 1);
+                    } else {
+                        value = isMin ? 0 : 1;
+                    }
+                } else {
+                    value = evaluated;
+                }
+
+                params[id] = value;
+                el.value = formatScalar(value);
+                scheduleGeometryUpdate();
+            }
+
+            ids.forEach((id) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                el.addEventListener('blur', () => applyUvBoundFromInput(id));
+                el.addEventListener('change', () => applyUvBoundFromInput(id));
+                el.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        applyUvBoundFromInput(id);
+                        el.blur();
+                    }
                 });
             });
 
@@ -724,6 +773,53 @@ function surface(input) {
             const shininessInput = document.getElementById('shininess');
             const autoRotateCheckbox = document.getElementById('autoRotate');
             const addParamBtn = document.getElementById('addParam');
+            const globalParamControls = document.getElementById('globalParamControls');
+            const playAllBtn = document.getElementById('playAllParams');
+            const pauseAllBtn = document.getElementById('pauseAllParams');
+
+            function updateGlobalControlsVisibility() {
+                if (globalParamControls) {
+                    globalParamControls.style.display = animatedParams.length > 1 ? '' : 'none';
+                }
+            }
+
+            playAllBtn.addEventListener('click', () => {
+                const now = performance.now();
+                animatedParams.forEach(state => {
+                    if (!state.playing) {
+                        // Calculate phase from current value so it doesn't jump
+                        let minVal = parseNum(state.minInput, -1);
+                        let maxVal = parseNum(state.maxInput, 1);
+                        let current = parseNum(state.valueInput, minVal);
+
+                        if (maxVal <= minVal) maxVal = minVal + 1;
+                        const range = maxVal - minVal;
+
+                        current = Math.min(Math.max(current, minVal), maxVal);
+                        const tUp = (current - minVal) / range;
+                        const clampedUp = Math.min(Math.max(tUp, 0), 1);
+                        
+                        // Triangle wave: 0..0.5 is rising edge
+                        state.phase = 0.5 * clampedUp;
+
+                        state.playing = true;
+                        state.playButton.textContent = '⏸';
+                        state.lastTime = now;
+                    }
+                });
+                scheduleGeometryUpdate();
+            });
+
+            pauseAllBtn.addEventListener('click', () => {
+                animatedParams.forEach(state => {
+                    if (state.playing) {
+                        state.playing = false;
+                        state.playButton.textContent = '▶';
+                        state.lastTime = performance.now(); // Not strictly needed for pause, but good hygiene
+                    }
+                });
+                scheduleGeometryUpdate();
+            });
 
             surfaceToggle.addEventListener('change', (e) => {
                 if (mesh) mesh.visible = e.target.checked;
@@ -919,6 +1015,14 @@ function surface(input) {
                             alert('Failed to load preset save file.');
                         });
                 });
+            }
+
+            // Helper to parse numbers from inputs
+            function parseNum(el, fallback) {
+                const raw = el.value;
+                if (!raw.length) return fallback;
+                const v = parseFloat(raw);
+                return Number.isNaN(v) ? fallback : v;
             }
 
             function addParameterRow() {
@@ -1139,16 +1243,10 @@ function surface(input) {
                     if (idx !== -1) animatedParams.splice(idx, 1);
                     section.remove();
                     scheduleGeometryUpdate();
+                    updateGlobalControlsVisibility();
                 });
 
                 // slider/min/max/step wiring
-                function parseNum(el, fallback) {
-                    const raw = el.value;
-                    if (!raw.length) return fallback;
-                    const v = parseFloat(raw);
-                    return Number.isNaN(v) ? fallback : v;
-                }
-
                 function applyMinMax(fromInput) {
                     let minVal = parseNum(minInput, -1);
                     let maxVal = parseNum(maxInput, 1);
@@ -1239,6 +1337,7 @@ function surface(input) {
                     lastTime: performance.now()
                 };
                 animatedParams.push(state);
+                updateGlobalControlsVisibility();
 
                 playButton.addEventListener('click', () => {
                     state.playing = !state.playing;
@@ -1460,6 +1559,7 @@ function surface(input) {
                 setSurfaceError('');
                 updateSurfaceButtonsState();
                 scheduleGeometryUpdate();
+                updateGlobalControlsVisibility();
             }
 
             function collectCurrentConfig() {

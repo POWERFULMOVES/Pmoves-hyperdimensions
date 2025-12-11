@@ -446,6 +446,7 @@ body {
 
 .footer-buttons-grid button {
     width: 100%;
+    font-size: 0.95rem;
 }
 
 .sidebar-footer-panel {
@@ -475,6 +476,11 @@ body {
 
 #paramExtras {
     margin-top: 10px;
+}
+
+/* Global params spacer */
+#globalParamControls {
+    margin-bottom: 12px;
 }
 
 .param-section {
