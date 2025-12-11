@@ -22,8 +22,37 @@
     <div id="sidebar-wrapper">
         <div id="sidebar">
             <div class="sidebar-header">
-                <h2>Function Controls</h2>
-                <button id="toggleSidebar">«</button>
+                <div class="sidebar-header-top">
+                    <h2>Function Controls</h2>
+                    <button id="toggleSidebar">«</button>
+                </div>
+                <div class="sidebar-header-actions">
+                    <button id="saveConfig">Save</button>
+                    <button id="loadConfig">Load</button>
+                </div>
+                <div class="sidebar-header-panel" id="sidebarHeaderPanel" style="display: none;">
+                    <div id="savePanel" class="header-panel" style="display: none;">
+                        <div class="header-panel-row">
+                            <label for="saveName">Save As:</label>
+                            <input type="text" id="saveName" placeholder="Name">
+                            <button id="downloadSave">Download</button>
+                        </div>
+                    </div>
+                    <div id="loadPanel" class="header-panel" style="display: none;">
+                        <div class="header-panel-row">
+                            <label for="loadPreset">Choose Save File:</label>
+                            <select id="loadPreset">
+                                <option value="shell">shell</option>
+                            </select>
+                            <button id="loadPresetBtn">Load</button>
+                        </div>
+                        <div class="header-panel-or">or</div>
+                        <div class="header-panel-row">
+                            <button id="uploadSaveBtn">Upload Save File</button>
+                            <input type="file" id="uploadSaveInput" style="display: none;">
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="controlsBody">
@@ -82,56 +111,104 @@
                     </div>
                 </div>
 
-                <div class="section-title parameters-title">Parameters</div>
-                <div class="control-row">
-                    <div class="control-group-inline">
-                        <label for="uMin">U min</label>
-                        <input type="number" id="uMin" min="0" max="2" step="0.01" value="0">
+                <hr class="section-divider">
+
+                <div class="section" id="parametersSection">
+                    <div class="section-header" id="parametersHeader">
+                        <span class="section-caret" id="parametersCaret">▼</span>
+                        <span class="section-title">Parameters</span>
                     </div>
-                    <div class="control-group-inline">
-                        <label for="uMax">max</label>
-                        <input type="number" id="uMax" min="0" max="2" step="0.01" value="1">
-                    </div>
-                    <div class="control-group-inline">
-                        <label for="uSegs">resolution</label>
-                        <input type="number" id="uSegs" min="10" max="500" value="150">
+                    <div class="section-body" id="parametersBody">
+                        <div class="control-row">
+                            <div class="control-group-inline">
+                                <label for="uMin">U min</label>
+                                <input type="number" id="uMin" min="0" max="2" step="0.01" value="0">
+                            </div>
+                            <div class="control-group-inline">
+                                <label for="uMax">max</label>
+                                <input type="number" id="uMax" min="0" max="2" step="0.01" value="1">
+                            </div>
+                            <div class="control-group-inline">
+                                <label for="uSegs">resolution</label>
+                                <input type="number" id="uSegs" min="10" max="500" value="150">
+                            </div>
+                        </div>
+
+                        <div class="control-row">
+                            <div class="control-group-inline">
+                                <label for="vMin">V min</label>
+                                <input type="number" id="vMin" min="0" max="2" step="0.01" value="0">
+                            </div>
+                            <div class="control-group-inline">
+                                <label for="vMax">max</label>
+                                <input type="number" id="vMax" min="0" max="2" step="0.01" value="1">
+                            </div>
+                            <div class="control-group-inline">
+                                <label for="vSegs">resolution</label>
+                                <input type="number" id="vSegs" min="3" max="500" value="150">
+                            </div>
+                        </div>
+
+                        <div id="paramExtras"></div>
+                        <div class="control-row">
+                            <div class="control-group">
+                                <button id="addParam">Add Parameter</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="control-row">
-                    <div class="control-group-inline">
-                        <label for="vMin">V min</label>
-                        <input type="number" id="vMin" min="0" max="2" step="0.01" value="0">
+                <hr class="section-divider">
+
+                <div class="section">
+                    <div class="section-header section-header-static">
+                        <span class="section-title">Surface function</span>
                     </div>
-                    <div class="control-group-inline">
-                        <label for="vMax">max</label>
-                        <input type="number" id="vMax" min="0" max="2" step="0.01" value="1">
-                    </div>
-                    <div class="control-group-inline">
-                        <label for="vSegs">resolution</label>
-                        <input type="number" id="vSegs" min="3" max="500" value="150">
+                    <div class="section-body">
+                        <div class="control-row">
+                            <div class="control-group">
+                                <textarea id="surfaceEditor" spellcheck="false"></textarea>
+                            </div>
+                        </div>
+                        <div id="surfaceError" class="surface-error" style="display: none;"></div>
                     </div>
                 </div>
 
-                <div id="paramExtras"></div>
-                <div class="control-row">
-                    <div class="control-group">
-                        <button id="addParam">Add Parameter</button>
-                    </div>
-                </div>
+                <hr class="section-divider">
 
-                <div class="control-row">
-                    <div class="control-group">
-                        <label for="surfaceEditor">Surface function</label>
-                        <textarea id="surfaceEditor" spellcheck="false"></textarea>
+                <div class="section">
+                    <div class="section-header" id="outputsHeader">
+                        <span class="section-caret" id="outputsCaret">▶</span>
+                        <span class="section-title">Outputs</span>
+                    </div>
+                    <div class="section-body" id="outputsBody" style="display: none;">
+                        <div class="control-row">
+                            <div class="control-group-inline outputs-row">
+                                <label for="coordConversion">Convert XYZ coordinates to</label>
+                                <select id="coordConversion">
+                                    <option value="none">None</option>
+                                    <option value="spherical">Spherical (r, θ, φ)</option>
+                                    <option value="cylindrical">Cylindrical (ρ, φ, z)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="control-row">
+                            <div class="control-group-inline outputs-row">
+                                <label for="rgbToHsv">Convert RGB to HSV</label>
+                                <input type="checkbox" id="rgbToHsv">
+                            </div>
+                        </div>
+                        <div class="outputs-note">
+                            (conversions occur after function code is executed, they do not require any code changes)
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div id="sidebar-footer">
                 <div class="button-row">
-                    <button id="applySurface">▶ Apply</button>
-                    <button id="copySurface">📋 Copy</button>
+                    <button id="applySurface" disabled>Apply</button>
+                    <button id="revertSurface" disabled>Revert</button>
                 </div>
             </div>
         </div>
@@ -209,6 +286,8 @@ function surface(input) {
         let surfaceFn = surface;
         const surfaceInput = { u: 0, v: 0 };
         const animatedParams = [];
+        let coordConversionMode = 'none'; // 'none' | 'spherical' | 'cylindrical'
+        let convertRgbToHsv = false;
 
         function normalizeSurfaceOutput(raw) {
             const clamp01 = (v) => {
@@ -228,6 +307,65 @@ function surface(input) {
             const g = clamp01(data.g);
             const b = clamp01(data.b);
             const a = clamp01(data.a != null ? data.a : 1);
+
+            return { x, y, z, r, g, b, a };
+        }
+
+        function applyOutputConversions(raw) {
+            if (!raw || typeof raw !== 'object') return raw;
+
+            let { x, y, z, r, g, b, a } = raw;
+
+            // Coordinate conversions interpret x,y,z as the chosen system
+            if (coordConversionMode === 'spherical') {
+                const radius = typeof x === 'number' ? x : 0;
+                const theta = typeof y === 'number' ? y : 0;
+                const phi = typeof z === 'number' ? z : 0;
+                const sinTheta = Math.sin(theta);
+                const cosTheta = Math.cos(theta);
+                const sinPhi = Math.sin(phi);
+                const cosPhi = Math.cos(phi);
+                x = radius * sinTheta * cosPhi;
+                y = radius * sinTheta * sinPhi;
+                z = radius * cosTheta;
+            } else if (coordConversionMode === 'cylindrical') {
+                const rho = typeof x === 'number' ? x : 0;
+                const phi = typeof y === 'number' ? y : 0;
+                const zVal = typeof z === 'number' ? z : 0;
+                const cosPhi = Math.cos(phi);
+                const sinPhi = Math.sin(phi);
+                x = rho * cosPhi;
+                y = rho * sinPhi;
+                z = zVal;
+            }
+
+            if (convertRgbToHsv) {
+                const rr = typeof r === 'number' ? r : 0;
+                const gg = typeof g === 'number' ? g : 0;
+                const bb = typeof b === 'number' ? b : 0;
+
+                const max = Math.max(rr, gg, bb);
+                const min = Math.min(rr, gg, bb);
+                const d = max - min;
+                let h = 0;
+                const v = max;
+                const s = max === 0 ? 0 : d / max;
+
+                if (d !== 0) {
+                    if (max === rr) {
+                        h = (gg - bb) / d + (gg < bb ? 6 : 0);
+                    } else if (max === gg) {
+                        h = (bb - rr) / d + 2;
+                    } else {
+                        h = (rr - gg) / d + 4;
+                    }
+                    h /= 6;
+                }
+
+                r = h;
+                g = s;
+                b = v;
+            }
 
             return { x, y, z, r, g, b, a };
         }
@@ -265,6 +403,7 @@ function surface(input) {
         controls.enableDamping = true;
         controls.maxDistance = 4000;
         controls.target.copy(initialTarget);
+        controls.autoRotateSpeed = 5;
 
         // --- Geometry Generation ---
         
@@ -285,7 +424,8 @@ function surface(input) {
             surfaceInput.u = u_norm;
             surfaceInput.v = v_norm;
             // We only need position here
-            const out = normalizeSurfaceOutput(surfaceFn(surfaceInput));
+            const converted = applyOutputConversions(surfaceFn(surfaceInput));
+            const out = normalizeSurfaceOutput(converted);
             target.set(out.x, out.y, out.z);
         }
 
@@ -397,7 +537,8 @@ function surface(input) {
                     surfaceInput.u = u_norm;
                     surfaceInput.v = v_norm;
 
-                    const out = normalizeSurfaceOutput(surfaceFn(surfaceInput));
+                    const converted = applyOutputConversions(surfaceFn(surfaceInput));
+                    const out = normalizeSurfaceOutput(converted);
 
                     positions.setXYZ(idx, out.x, out.y, out.z);
                     colors.setXYZW(idx, out.r, out.g, out.b, out.a);
@@ -656,6 +797,134 @@ function surface(input) {
                 visualsCaret.textContent = isHidden ? '▼' : '▶';
             });
 
+            const parametersHeader = document.getElementById('parametersHeader');
+            const parametersBody = document.getElementById('parametersBody');
+            const parametersCaret = document.getElementById('parametersCaret');
+
+            parametersHeader.addEventListener('click', () => {
+                const isHidden = parametersBody.style.display === 'none';
+                parametersBody.style.display = isHidden ? '' : 'none';
+                parametersCaret.textContent = isHidden ? '▼' : '▶';
+            });
+
+            const outputsHeader = document.getElementById('outputsHeader');
+            const outputsBody = document.getElementById('outputsBody');
+            const outputsCaret = document.getElementById('outputsCaret');
+
+            outputsHeader.addEventListener('click', () => {
+                const isHidden = outputsBody.style.display === 'none';
+                outputsBody.style.display = isHidden ? '' : 'none';
+                outputsCaret.textContent = isHidden ? '▼' : '▶';
+            });
+
+            const coordSelect = document.getElementById('coordConversion');
+            const rgbToHsvCheckbox = document.getElementById('rgbToHsv');
+
+            coordSelect.addEventListener('change', () => {
+                coordConversionMode = coordSelect.value || 'none';
+                scheduleGeometryUpdate();
+            });
+
+            rgbToHsvCheckbox.addEventListener('change', () => {
+                convertRgbToHsv = rgbToHsvCheckbox.checked;
+                scheduleGeometryUpdate();
+            });
+
+            const saveBtn = document.getElementById('saveConfig');
+            const loadBtn = document.getElementById('loadConfig');
+            const headerPanel = document.getElementById('sidebarHeaderPanel');
+            const savePanel = document.getElementById('savePanel');
+            const loadPanel = document.getElementById('loadPanel');
+            const uploadSaveBtn = document.getElementById('uploadSaveBtn');
+            const uploadSaveInput = document.getElementById('uploadSaveInput');
+            const loadPresetSelect = document.getElementById('loadPreset');
+            const loadPresetBtn = document.getElementById('loadPresetBtn');
+
+            function hideHeaderPanels() {
+                headerPanel.style.display = 'none';
+                savePanel.style.display = 'none';
+                loadPanel.style.display = 'none';
+            }
+
+            saveBtn.addEventListener('click', () => {
+                const saveVisible = headerPanel.style.display !== 'none' && savePanel.style.display !== 'none';
+                if (saveVisible) {
+                    hideHeaderPanels();
+                    return;
+                }
+                headerPanel.style.display = '';
+                savePanel.style.display = '';
+                loadPanel.style.display = 'none';
+            });
+
+            loadBtn.addEventListener('click', () => {
+                const loadVisible = headerPanel.style.display !== 'none' && loadPanel.style.display !== 'none';
+                if (loadVisible) {
+                    hideHeaderPanels();
+                    return;
+                }
+                headerPanel.style.display = '';
+                loadPanel.style.display = '';
+                savePanel.style.display = 'none';
+            });
+
+            uploadSaveBtn.addEventListener('click', () => {
+                if (uploadSaveInput) {
+                    uploadSaveInput.click();
+                }
+            });
+
+            if (loadPresetSelect) {
+                fetch('saves/_list.json')
+                    .then((res) => {
+                        if (!res.ok) throw new Error('Failed to load save list');
+                        return res.json();
+                    })
+                    .then((list) => {
+                        if (!Array.isArray(list)) return;
+                        loadPresetSelect.innerHTML = '';
+                        list.forEach((item) => {
+                            if (!item || typeof item !== 'object') return;
+                            const name = item.name || item.file || 'unnamed';
+                            const file = item.file || '';
+                            if (!file) return;
+                            const opt = document.createElement('option');
+                            opt.value = file;
+                            opt.textContent = name;
+                            loadPresetSelect.appendChild(opt);
+                        });
+                        if (!loadPresetSelect.options.length) {
+                            const opt = document.createElement('option');
+                            opt.value = '';
+                            opt.textContent = 'No saves found';
+                            loadPresetSelect.appendChild(opt);
+                        }
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                    });
+            }
+
+            if (loadPresetBtn && loadPresetSelect) {
+                loadPresetBtn.addEventListener('click', () => {
+                    const file = loadPresetSelect.value;
+                    if (!file) return;
+                    fetch('saves/' + file)
+                        .then((res) => {
+                            if (!res.ok) throw new Error('Failed to load preset');
+                            return res.json();
+                        })
+                        .then((cfg) => {
+                            applyConfig(cfg);
+                            hideHeaderPanels();
+                        })
+                        .catch((err) => {
+                            console.error(err);
+                            alert('Failed to load preset save file.');
+                        });
+                });
+            }
+
             function addParameterRow() {
                 const container = document.getElementById('paramExtras');
                 if (!container) return;
@@ -746,7 +1015,7 @@ function surface(input) {
                 stepInput.type = 'number';
                 stepInput.step = '0.001';
                 stepInput.className = 'param-step';
-                stepInput.value = '0.01';
+                stepInput.value = '0.001';
                 stepGroup.appendChild(stepLabel);
                 stepGroup.appendChild(stepInput);
 
@@ -1004,7 +1273,8 @@ function surface(input) {
 
             const surfaceTextArea = document.getElementById('surfaceEditor');
             const applySurfaceBtn = document.getElementById('applySurface');
-            const copySurfaceBtn = document.getElementById('copySurface');
+            const revertSurfaceBtn = document.getElementById('revertSurface');
+            const surfaceErrorEl = document.getElementById('surfaceError');
 
             const editor = CodeMirror.fromTextArea(surfaceTextArea, {
                 mode: 'javascript',
@@ -1016,7 +1286,27 @@ function surface(input) {
                 viewportMargin: Infinity
             });
             editor.setSize(null, 'auto');
-            editor.setValue(surface.toString());
+
+            let lastAppliedCode = surface.toString();
+            editor.setValue(lastAppliedCode);
+
+            function setSurfaceError(message) {
+                if (!surfaceErrorEl) return;
+                if (message) {
+                    surfaceErrorEl.textContent = message;
+                    surfaceErrorEl.style.display = '';
+                } else {
+                    surfaceErrorEl.textContent = '';
+                    surfaceErrorEl.style.display = 'none';
+                }
+            }
+
+            function updateSurfaceButtonsState() {
+                const current = editor.getValue();
+                const dirty = current !== lastAppliedCode;
+                applySurfaceBtn.disabled = !dirty;
+                revertSurfaceBtn.disabled = !dirty;
+            }
 
             function applySurface() {
                 const code = editor.getValue();
@@ -1026,40 +1316,268 @@ function surface(input) {
                     if (typeof fn !== 'function') {
                         throw new Error('surface is not a function');
                     }
+
+                    try {
+                        const testInput = { u: 0.5, v: 0.5 };
+                        fn(testInput);
+                    } catch (innerErr) {
+                        throw new Error(innerErr && innerErr.message ? innerErr.message : 'Error when evaluating surface');
+                    }
+
                     surfaceFn = fn;
+                    lastAppliedCode = code;
                     updateGeometry();
+                    setSurfaceError('');
+                    updateSurfaceButtonsState();
                 } catch (err) {
                     console.error(err);
-                    alert('Error in surface function: ' + err.message);
+                    setSurfaceError(err && err.message ? err.message : 'Error in surface function');
                 }
             }
 
             applySurfaceBtn.addEventListener('click', applySurface);
+
+            revertSurfaceBtn.addEventListener('click', () => {
+                editor.setValue(lastAppliedCode);
+                setSurfaceError('');
+                updateSurfaceButtonsState();
+            });
 
             editor.addKeyMap({
                 'Ctrl-Enter': function(cm) {
                     applySurface();
                 }
             });
+            editor.on('change', updateSurfaceButtonsState);
 
-            copySurfaceBtn.addEventListener('click', async () => {
-                const code = editor.getValue();
-                try {
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        await navigator.clipboard.writeText(code);
-                    } else {
-                        const temp = document.createElement('textarea');
-                        temp.value = code;
-                        document.body.appendChild(temp);
-                        temp.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(temp);
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert('Failed to copy to clipboard: ' + err.message);
+            const saveNameInput = document.getElementById('saveName');
+            const downloadSaveBtn = document.getElementById('downloadSave');
+
+            function applyConfig(cfg) {
+                if (!cfg || typeof cfg !== 'object') return;
+
+                const toNum = (v, fallback) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
+
+                const display = cfg.display || {};
+                autoRotateCheckbox.checked = !!display.autoRotate;
+                controls.autoRotate = autoRotateCheckbox.checked;
+
+                axesCheckbox.checked = !!display.showAxes;
+                axes.visible = axesCheckbox.checked;
+
+                surfaceToggle.checked = display.showSurface !== false;
+                if (mesh) mesh.visible = surfaceToggle.checked;
+
+                wireToggle.checked = !!display.showWireframe;
+                if (wireframe) wireframe.visible = wireToggle.checked;
+
+                const dirVal = toNum(display.dirIntensity, 1);
+                dirIntensity.value = String(dirVal);
+                dirLight.intensity = dirVal;
+
+                const shininessVal = toNum(display.shininess, 100);
+                shininessInput.value = String(shininessVal);
+                if (mesh && !Array.isArray(mesh.material) && 'shininess' in mesh.material) {
+                    mesh.material.shininess = shininessVal;
+                } else if (mesh && Array.isArray(mesh.material)) {
+                    mesh.material.forEach(m => { if (m && 'shininess' in m) m.shininess = shininessVal; });
                 }
-            });
+
+                const parameters = cfg.parameters || {};
+                params.uMin = toNum(parameters.uMin, 0);
+                params.uMax = toNum(parameters.uMax, 1);
+                params.vMin = toNum(parameters.vMin, 0);
+                params.vMax = toNum(parameters.vMax, 1);
+                params.uSegs = Math.max(10, Math.min(500, toNum(parameters.uSegs, 150)));
+                params.vSegs = Math.max(3, Math.min(500, toNum(parameters.vSegs, 150)));
+
+                document.getElementById('uMin').value = String(params.uMin);
+                document.getElementById('uMax').value = String(params.uMax);
+                document.getElementById('vMin').value = String(params.vMin);
+                document.getElementById('vMax').value = String(params.vMax);
+                document.getElementById('uSegs').value = String(params.uSegs);
+                document.getElementById('vSegs').value = String(params.vSegs);
+
+                const extras = Array.isArray(cfg.extraParameters) ? cfg.extraParameters : [];
+                const extrasContainer = document.getElementById('paramExtras');
+                if (extrasContainer) {
+                    animatedParams.splice(0, animatedParams.length);
+                    while (extrasContainer.firstChild) {
+                        extrasContainer.removeChild(extrasContainer.firstChild);
+                    }
+                }
+
+                extras.forEach((item) => {
+                    if (!item || typeof item !== 'object') return;
+                    addParameterRow();
+                    const state = animatedParams[animatedParams.length - 1];
+                    if (!state) return;
+
+                    const name = typeof item.name === 'string' ? item.name : '';
+                    state.nameInput.value = name;
+                    state.nameInput.dataset.prevName = name;
+
+                    const val = toNum(item.value, 1);
+                    const minVal = toNum(item.min, val - 1);
+                    const maxVal = toNum(item.max, val + 1);
+                    const stepVal = toNum(item.step, 0.001);
+                    const runtimeVal = toNum(item.runtime, 8);
+
+                    state.valueInput.value = formatScalar(val);
+                    state.minInput.value = formatScalar(minVal);
+                    state.maxInput.value = formatScalar(maxVal);
+                    state.stepInput.value = formatScalar(stepVal);
+                    state.timeInput.value = formatScalar(runtimeVal);
+
+                    state.sliderInput.min = String(minVal);
+                    state.sliderInput.max = String(maxVal);
+                    state.sliderInput.value = String(val);
+                    state.sliderInput.step = String(stepVal);
+                });
+
+                const outputs = cfg.outputs || {};
+                const coordMode = outputs.coordConversion === 'spherical' || outputs.coordConversion === 'cylindrical' ? outputs.coordConversion : 'none';
+                coordConversionMode = coordMode;
+                const coordSelect = document.getElementById('coordConversion');
+                if (coordSelect) coordSelect.value = coordMode;
+
+                convertRgbToHsv = !!outputs.rgbToHsv;
+                const rgbToHsvCheckbox = document.getElementById('rgbToHsv');
+                if (rgbToHsvCheckbox) rgbToHsvCheckbox.checked = convertRgbToHsv;
+
+                const surfaceCfg = cfg.surface || {};
+                const code = typeof surfaceCfg.code === 'string' && surfaceCfg.code.trim().length ? surfaceCfg.code : surface.toString();
+                editor.setValue(code);
+                lastAppliedCode = code;
+                try {
+                    const factory = new Function(code + '; return surface;');
+                    const fn = factory();
+                    if (typeof fn === 'function') {
+                        surfaceFn = fn;
+                    } else {
+                        surfaceFn = surface;
+                    }
+                } catch {
+                    surfaceFn = surface;
+                }
+
+                setSurfaceError('');
+                updateSurfaceButtonsState();
+                scheduleGeometryUpdate();
+            }
+
+            function collectCurrentConfig() {
+                const display = {
+                    autoRotate: !!autoRotateCheckbox.checked,
+                    showAxes: !!axesCheckbox.checked,
+                    showSurface: !!surfaceToggle.checked,
+                    showWireframe: !!wireToggle.checked,
+                    dirIntensity: parseFloat(dirIntensity.value) || 0,
+                    shininess: getCurrentShininess()
+                };
+
+                const parameters = {
+                    uMin: params.uMin,
+                    uMax: params.uMax,
+                    vMin: params.vMin,
+                    vMax: params.vMax,
+                    uSegs: params.uSegs,
+                    vSegs: params.vSegs
+                };
+
+                const extraParameters = [];
+                animatedParams.forEach((state) => {
+                    const name = state.nameInput.value.trim();
+                    if (!name) return;
+                    const parse = (input) => {
+                        const raw = input.value;
+                        if (!raw || !raw.length) return null;
+                        const n = parseFloat(raw);
+                        return Number.isNaN(n) ? null : n;
+                    };
+                    extraParameters.push({
+                        name,
+                        value: parse(state.valueInput),
+                        min: parse(state.minInput),
+                        max: parse(state.maxInput),
+                        step: parse(state.stepInput),
+                        runtime: parse(state.timeInput)
+                    });
+                });
+
+                const surfaceConfig = {
+                    code: editor.getValue()
+                };
+
+                const outputs = {
+                    coordConversion: coordConversionMode,
+                    rgbToHsv: !!convertRgbToHsv
+                };
+
+                return {
+                    version: 1,
+                    display,
+                    parameters,
+                    extraParameters,
+                    surface: surfaceConfig,
+                    outputs
+                };
+            }
+
+            function downloadCurrentConfig() {
+                if (!saveNameInput || !downloadSaveBtn) return;
+                const rawName = saveNameInput.value.trim();
+                if (!rawName) {
+                    alert('Please enter a name for the save.');
+                    saveNameInput.focus();
+                    return;
+                }
+
+                const config = collectCurrentConfig();
+                const json = JSON.stringify(config, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                let filename = rawName;
+                if (!filename.toLowerCase().endsWith('.json')) {
+                    filename += '.json';
+                }
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                hideHeaderPanels();
+            }
+
+            if (downloadSaveBtn) {
+                downloadSaveBtn.addEventListener('click', downloadCurrentConfig);
+            }
+
+            if (uploadSaveInput) {
+                uploadSaveInput.addEventListener('change', () => {
+                    const file = uploadSaveInput.files && uploadSaveInput.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const text = String(e.target.result || '');
+                            const data = JSON.parse(text);
+                            applyConfig(data);
+                            hideHeaderPanels();
+                        } catch (err) {
+                            console.error(err);
+                            alert('Failed to load save file.');
+                        } finally {
+                            uploadSaveInput.value = '';
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+            }
 
             const resetButton = document.getElementById('resetCamera');
             resetButton.addEventListener('click', () => {
