@@ -287,10 +287,16 @@ body {
 }
 
 #applySurface {
+    background: #444;
+    border-color: #666;
+    color: #eee;
+    font-size: 0.95rem;
+}
+
+#applySurface:not(:disabled) {
     background: #1d7a32;
     border-color: #2bbf5c;
     color: #fff;
-    font-size: 0.95rem;
 }
 
 #applySurface:hover:not(:disabled) {
@@ -307,6 +313,7 @@ body {
     cursor: not-allowed;
 }
 
+#applySurface:disabled:hover,
 #revertSurface:disabled:hover {
     background: #444;
 }
@@ -472,6 +479,7 @@ body {
     border: 1px solid #666;
     cursor: pointer;
     z-index: 10;
+    color: white;
 }
 
 .floating-button:hover {

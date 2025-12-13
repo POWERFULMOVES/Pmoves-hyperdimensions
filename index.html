@@ -227,7 +227,7 @@
     </div>
 
     <div id="viewport">
-        <button id="resetCamera" class="floating-button" title="Reset camera">📷</button>
+        <button id="resetCamera" class="floating-button" title="Reset camera">↻</button>
     </div>
 
     <script type="module">
@@ -251,49 +251,14 @@
         // x, y, z: position
         // r, g, b: color [0,1]
         // a: alpha [0,1] (optional, defaults to 1)
- 
-// (weird indentation to make it look better in the editor)
+
+        // Default placeholder surface
 function surface(input) {
-    const u = input.u;
-    const v = input.v;
-    const t = input.t;
- 
-    // Map u to spiral angle (3 full turns)
-    const angleLimit = 6 * Math.PI;
-    const spiralAngle = u * angleLimit;
-     
-    // Map v to tube angle
-    const tubeAngle = v * 2 * Math.PI;
- 
-    // Nautilus / Logarithmic Spiral parameters
-    const baseRadius = 1; 
-    const k = 0.15; 
-    const R = baseRadius * Math.exp(k * spiralAngle);
-    
-    // Tube radius grows with the spiral
-    const growthFactor = Math.exp(k * 2 * Math.PI * t);
-    const tubeRadius = R * (growthFactor - 1) * 0.5 * 0.95; 
-     
-    const x = (R + tubeRadius * Math.cos(tubeAngle)) * Math.cos(spiralAngle);
-    const y = (R + tubeRadius * Math.cos(tubeAngle)) * Math.sin(spiralAngle);
-    const z = tubeRadius * Math.sin(tubeAngle);
- 
-    // Coloring Logic
-    const stripeFrequency = 10; 
-    const stripeIntensity = Math.pow(Math.sin(spiralAngle * stripeFrequency), 4);
-     
-    const baseR = 0.95, baseG = 0.90, baseB = 0.80;
-    const stripeR = 0.6, stripeG = 0.3, stripeB = 0.1;
-     
-    const r = baseR * (1 - stripeIntensity) + stripeR * stripeIntensity;
-    const g = baseG * (1 - stripeIntensity) + stripeG * stripeIntensity;
-    const b = baseB * (1 - stripeIntensity) + stripeB * stripeIntensity;
-    const a = 1.0;
-     
-    return { x, y, z, r, g, b, a };
- }
+    return { x: 0, y: 0, z: 0, r: 1, g: 1, b: 1, a: 1 };
+}
 
         let surfaceFn = surface;
+        let currentLoadedFile = 'nautilus.json'; // Track currently loaded file
         const surfaceInput = { u: 0, v: 0 };
         const animatedParams = [];
         let coordConversionMode = 'none'; // 'none' | 'spherical' | 'cylindrical'
@@ -1024,12 +989,6 @@ function surface(input) {
             const surfaceBody = document.getElementById('surfaceBody');
             const surfaceCaret = document.getElementById('surfaceCaret');
 
-            surfaceHeader.addEventListener('click', () => {
-                const isHidden = surfaceBody.style.display === 'none';
-                surfaceBody.style.display = isHidden ? '' : 'none';
-                surfaceCaret.textContent = isHidden ? '▼' : '▶';
-            });
-
             const coordSelect = document.getElementById('coordConversion');
             const rgbToHsvCheckbox = document.getElementById('rgbToHsv');
 
@@ -1098,6 +1057,9 @@ function surface(input) {
                             const opt = document.createElement('option');
                             opt.value = file;
                             opt.textContent = name;
+                            if (file === currentLoadedFile) {
+                                opt.selected = true;
+                            }
                             loadPresetSelect.appendChild(opt);
                         });
                         if (!loadPresetSelect.options.length) {
@@ -1149,6 +1111,7 @@ function surface(input) {
                             return res.json();
                         })
                         .then((cfg) => {
+                            currentLoadedFile = file;
                             applyConfig(cfg);
                             hideHeaderPanels();
                         })
@@ -1587,6 +1550,17 @@ function surface(input) {
             });
             editor.on('change', updateSurfaceButtonsState);
 
+            if (surfaceHeader) {
+                surfaceHeader.addEventListener('click', () => {
+                    const isHidden = surfaceBody.style.display === 'none';
+                    surfaceBody.style.display = isHidden ? '' : 'none';
+                    surfaceCaret.textContent = isHidden ? '▼' : '▶';
+                    if (isHidden && editor) {
+                        setTimeout(() => editor.refresh(), 10);
+                    }
+                });
+            }
+
             const saveNameInput = document.getElementById('saveName');
             const downloadSaveBtn = document.getElementById('downloadSave');
 
@@ -1707,16 +1681,24 @@ function surface(input) {
                 const surfaceCfg = cfg.surface || {};
                 const code = typeof surfaceCfg.code === 'string' && surfaceCfg.code.trim().length ? surfaceCfg.code : surface.toString();
                 editor.setValue(code);
+                editor.refresh();
                 lastAppliedCode = code;
                 try {
                     const factory = new Function(code + '; return surface;');
                     const fn = factory();
                     if (typeof fn === 'function') {
                         surfaceFn = fn;
+                        try {
+                            const testInput = { u: 0.5, v: 0.5 };
+                            fn(testInput);
+                        } catch (innerErr) {
+                            console.warn('Surface function test failed:', innerErr);
+                        }
                     } else {
                         surfaceFn = surface;
                     }
-                } catch {
+                } catch (err) {
+                    console.error('Failed to compile surface function:', err);
                     surfaceFn = surface;
                 }
 
@@ -1941,10 +1923,23 @@ function surface(input) {
                 camTweenStart = performance.now();
                 isCameraTweening = true;
             });
+
+            // Load nautilus by default on startup
+            fetch('saves/nautilus.json')
+                .then((res) => {
+                    if (!res.ok) throw new Error('Failed to load default surface');
+                    return res.json();
+                })
+                .then((cfg) => {
+                    applyConfig(cfg);
+                })
+                .catch((err) => {
+                    console.error('Failed to load default surface:', err);
+                    updateGeometry();
+                });
         }
 
         setupUI();
-        updateGeometry();
         animate();
     </script>
 </body>

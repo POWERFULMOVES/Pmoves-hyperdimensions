@@ -1,7 +1,7 @@
 {
   "version": 1,
   "display": {
-    "autoRotate": false,
+    "autoRotate": true,
     "showAxes": false,
     "showSurface": true,
     "showWireframe": false,
@@ -9,9 +9,9 @@
     "shininess": 100,
     "camera": {
       "position": {
-        "x": 2.6061530215505133,
-        "y": -26.706901577064528,
-        "z": 3.3566421822176444
+        "x": 19.061739745712018,
+        "y": 27.729609788092148,
+        "z": 59.18436119577432
       },
       "target": {
         "x": 0,
