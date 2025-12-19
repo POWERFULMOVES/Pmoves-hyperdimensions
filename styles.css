@@ -4,6 +4,7 @@ body {
     font-family: sans-serif;
     display: flex;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
 }
 
@@ -447,6 +448,7 @@ body {
 
 #controlsBody {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 16px 16px 20px 16px;

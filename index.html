@@ -2050,6 +2050,36 @@ function surface(input) {
                 document.body.classList.remove('resizing-sidebar');
             });
 
+            // Touch support for resizing
+            resizer.addEventListener('touchstart', (e) => {
+                if (sidebar.classList.contains('collapsed')) return;
+                isResizing = true;
+                startX = e.touches[0].clientX;
+                startWidth = sidebar.getBoundingClientRect().width;
+                const totalWidth = document.body.clientWidth || window.innerWidth;
+                maxWidth = Math.max(minWidth, totalWidth - 40);
+                document.body.classList.add('resizing-sidebar');
+                e.preventDefault(); 
+            }, { passive: false });
+
+            window.addEventListener('touchmove', (e) => {
+                if (!isResizing) return;
+                const dx = e.touches[0].clientX - startX;
+                let newWidth = startWidth + dx;
+                if (newWidth < minWidth) newWidth = minWidth;
+                if (newWidth > maxWidth) newWidth = maxWidth;
+                sidebar.style.width = newWidth + 'px';
+                lastSidebarWidth = newWidth;
+                resizeRendererToViewport();
+                e.preventDefault(); 
+            }, { passive: false });
+
+            window.addEventListener('touchend', () => {
+                if (!isResizing) return;
+                isResizing = false;
+                document.body.classList.remove('resizing-sidebar');
+            });
+
             renderer.domElement.addEventListener('dblclick', (event) => {
                 const rect = renderer.domElement.getBoundingClientRect();
                 const x = (event.clientX - rect.left) / rect.width;
