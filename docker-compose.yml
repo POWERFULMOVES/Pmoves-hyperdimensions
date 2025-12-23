@@ -1,0 +1,28 @@
+version: '3.8'
+
+networks:
+  api_tier:
+    external: true
+    name: pmoves_api
+  monitoring_tier:
+    external: true
+    name: pmoves_monitoring
+
+services:
+  hyperdimensions-ui:
+    image: nginxinc/nginx-unprivileged:alpine
+    restart: unless-stopped
+    ports:
+      - "8099:8080" # Map host 8099 to container 8080 (unprivileged default)
+    volumes:
+      - .:/usr/share/nginx/html:ro # Mount current dir as read-only static root
+    networks:
+      - api_tier
+      - monitoring_tier
+    # Security Hardening
+    user: "101:101" # Nginx unprivileged user
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
