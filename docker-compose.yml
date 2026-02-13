@@ -1,0 +1,44 @@
+networks:
+  api_tier:
+    external: true
+    name: pmoves_api
+  monitoring_tier:
+    external: true
+    name: pmoves_monitoring
+
+services:
+  hyperdimensions-ui:
+    image: nginxinc/nginx-unprivileged:alpine
+    container_name: pmoves-hyperdimensions-ui
+    restart: unless-stopped
+    ports:
+      - "${HYPERDIMENSIONS_PORT:-8100}:8080"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./styles.css:/usr/share/nginx/html/styles.css:ro
+      - ./saves:/usr/share/nginx/html/saves
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    networks:
+      - api_tier
+      - monitoring_tier
+    # Security Hardening
+    user: "101:101" # Nginx unprivileged user
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
