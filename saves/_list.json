@@ -98,5 +98,13 @@
     {
         "file": "taylor.json",
         "name": "Taylor Surface"
+    },
+    {
+        "file": "chit_manifold.json",
+        "name": "CHIT Manifold"
+    },
+    {
+        "file": "agent_topology.json",
+        "name": "Agent Taxonomy (Poincare Disk)"
     }
 ]
