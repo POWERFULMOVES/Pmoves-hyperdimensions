@@ -1,0 +1,147 @@
+{
+  "surfaceFn": "function surface(input) {\n    // Poincare disk: PMOVES-Archon topology\n    // 1 agent(s), primary type: agent, stage: stage_2\n    const theta = input.u * 2 * Math.PI;\n    const r_raw = input.v * 0.95;\n    const r = Math.tanh(r_raw * 2) * 0.95;\n\n    // Geometry state vector\n    const delta = input.delta || 0.5;\n    const kappa = input.kappa || 0.0;\n    const hz = input.hz || 0.2;\n    const fitness = input.fitness || 0.7;\n    const attrib = input.attribution || 0.8;\n\n    // Toggle density drives surface height\n    const density = (delta + (1+kappa) + (1-hz) + fitness + attrib) / 5.0;\n    const z = Math.sin(theta * 3) * density * 0.35 * r;\n\n    // Position on Poincare disk\n    const x = r * Math.cos(theta);\n    const y = r * Math.sin(theta);\n\n    // Color: agent type tint modulated by readiness\n    const readiness = Math.min(1, density * 1.2);\n    const red = 0.58 * readiness + (1 - readiness) * 0.3;\n    const green = 0.44 * readiness + (1 - readiness) * 0.3;\n    const blue = 0.86 * readiness + (1 - readiness) * 0.3;\n\n    return {\n        x: x * 5,\n        y: y * 5,\n        z: z,\n        r: red,\n        g: green,\n        b: blue,\n        a: 0.85\n    };\n}",
+  "params": {
+    "uMin": 0,
+    "uMax": 1,
+    "vMin": 0,
+    "vMax": 1,
+    "uSegs": 200,
+    "vSegs": 100
+  },
+  "surfaceInput": {
+    "u": 0,
+    "v": 0,
+    "delta": 0.7,
+    "kappa": -0.5,
+    "hz": 0.6,
+    "fitness": 0.5,
+    "attribution": 0.95
+  },
+  "animatedParams": [
+    {
+      "name": "delta",
+      "playing": true,
+      "min": 0.1,
+      "max": 0.9,
+      "step": 0.01,
+      "time": 8,
+      "phase": 0
+    },
+    {
+      "name": "fitness",
+      "playing": true,
+      "min": 0.3,
+      "max": 1.0,
+      "step": 0.01,
+      "time": 12,
+      "phase": 1.57
+    },
+    {
+      "name": "hz",
+      "playing": true,
+      "min": 0.05,
+      "max": 0.8,
+      "step": 0.01,
+      "time": 6,
+      "phase": 3.14
+    }
+  ],
+  "camera": {
+    "position": {
+      "x": 0,
+      "y": 0,
+      "z": 8
+    },
+    "target": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    }
+  },
+  "shininess": 120,
+  "globalSaturation": 1.3,
+  "meta": {
+    "description": "PMOVES-Archon Topology on Poincare Disk",
+    "submodule": "PMOVES-Archon",
+    "branch_suffix": "Archon",
+    "taxonomy_version": "1.0.0",
+    "geometry_state_vector": {
+      "delta_proxy": 0.7,
+      "curvature_k": -0.5,
+      "spectral_entropy_z": 0.6,
+      "swarm_fitness": 0.5,
+      "attribution_confidence": 0.95
+    },
+    "class_rings": {
+      "legendary": {
+        "r_min": 0.0,
+        "r_max": 0.05
+      },
+      "standard": {
+        "r_min": 0.05,
+        "r_max": 0.4
+      },
+      "specialized": {
+        "r_min": 0.4,
+        "r_max": 0.7
+      },
+      "utility": {
+        "r_min": 0.7,
+        "r_max": 0.95
+      }
+    },
+    "type_sectors": {
+      "data": {
+        "theta_min": 0.0,
+        "theta_max": 0.9
+      },
+      "api": {
+        "theta_min": 0.9,
+        "theta_max": 1.8
+      },
+      "llm": {
+        "theta_min": 1.8,
+        "theta_max": 2.7
+      },
+      "worker": {
+        "theta_min": 2.7,
+        "theta_max": 3.6
+      },
+      "media": {
+        "theta_min": 3.6,
+        "theta_max": 4.5
+      },
+      "agent": {
+        "theta_min": 4.5,
+        "theta_max": 5.4
+      },
+      "ui": {
+        "theta_min": 5.4,
+        "theta_max": 6.28
+      }
+    },
+    "agents": {
+      "archon": {
+        "name": "Archon",
+        "class": "standard",
+        "primary_type": "agent",
+        "port": 8091,
+        "layers": [
+          "L0",
+          "L1",
+          "L2",
+          "L2.5",
+          "L4",
+          "L5"
+        ],
+        "evolution_stage": "stage_2",
+        "position": {
+          "r": 0.225,
+          "theta": 4.95
+        }
+      }
+    },
+    "source": "pmoves/config/agent_registry.yaml",
+    "docs": "pmoves/docs/AGENTS/PMOVES_AGENT_CLASS_TAXONOMY.md"
+  }
+}

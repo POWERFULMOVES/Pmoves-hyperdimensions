@@ -106,5 +106,45 @@
     {
         "file": "agent_topology.json",
         "name": "Agent Taxonomy (Poincare Disk)"
+    },
+    {
+        "file": "PMOVES-Agent-Zero_topology.json",
+        "name": "PMOVES-Agent-Zero Topology (A0)"
+    },
+    {
+        "file": "PMOVES-Archon_topology.json",
+        "name": "PMOVES-Archon Topology (Archon)"
+    },
+    {
+        "file": "PMOVES-BotZ-gateway_topology.json",
+        "name": "PMOVES-BotZ-gateway Topology (BoTZ)"
+    },
+    {
+        "file": "PMOVES-Deep-Serch_topology.json",
+        "name": "PMOVES-Deep-Serch Topology (DSerch)"
+    },
+    {
+        "file": "PMOVES-HiRAG_topology.json",
+        "name": "PMOVES-HiRAG Topology (HiRAG)"
+    },
+    {
+        "file": "PMOVES-Jellyfin_topology.json",
+        "name": "PMOVES-Jellyfin Topology (JellyBridge)"
+    },
+    {
+        "file": "PMOVES-MAI-UI_topology.json",
+        "name": "PMOVES-MAI-UI Topology (MAI)"
+    },
+    {
+        "file": "PMOVES_YT_topology.json",
+        "name": "PMOVES.YT Topology (YT)"
+    },
+    {
+        "file": "Pmoves-cipher_topology.json",
+        "name": "Pmoves-cipher Topology (Cipher)"
+    },
+    {
+        "file": "Pmoves-hyperdimensions_topology.json",
+        "name": "Pmoves-hyperdimensions Topology (HD)"
     }
 ]
