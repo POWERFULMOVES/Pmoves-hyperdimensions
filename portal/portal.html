@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DARKXSIDE Portal — PMOVES.AI Hyperdimensions</title>
+  <link rel="stylesheet" href="portal.css">
+</head>
+<body>
+  <div id="portal-root">
+    <!-- Three.js Hyperdimensions Viewer -->
+    <div id="viewer-panel">
+      <iframe
+        id="hyperdimensions-frame"
+        src="/index.html"
+        title="Hyperdimensions Poincare Disk"
+        allow="fullscreen"
+      ></iframe>
+    </div>
+
+    <!-- WebRTC Voice Panel -->
+    <div id="voice-panel">
+      <div id="voice-header">
+        <span class="glyph">✦</span>
+        <span class="title">DARKXSIDE Voice Portal</span>
+        <span id="connection-status" class="status disconnected">Disconnected</span>
+      </div>
+
+      <div id="prosodic-overlay">
+        <div id="boundary-display">
+          <span id="boundary-type">—</span>
+          <span id="boundary-bpm">— BPM</span>
+        </div>
+        <div id="beat-meter">
+          <div id="beat-fill"></div>
+        </div>
+        <div id="note-display">—</div>
+      </div>
+
+      <div id="voice-controls">
+        <button id="btn-connect" class="portal-btn primary" disabled>
+          Connect Voice
+        </button>
+        <button id="btn-disconnect" class="portal-btn" disabled>
+          Disconnect
+        </button>
+      </div>
+
+      <!-- Capture Controls -->
+      <div id="capture-controls">
+        <button id="btn-screenshot" class="portal-btn capture">
+          Screenshot
+        </button>
+        <button id="btn-record-start" class="portal-btn capture">
+          Record
+        </button>
+        <button id="btn-record-stop" class="portal-btn capture" disabled>
+          Stop Recording
+        </button>
+      </div>
+    </div>
+
+    <!-- DARKXSIDE HUD -->
+    <div id="darkxside-hud">
+      <div class="hud-glyph">✦</div>
+      <div class="hud-label">COCREATOR :: WITNESS</div>
+    </div>
+
+    <!-- Auth Status -->
+    <div id="auth-overlay" class="hidden">
+      <div class="auth-message">
+        <span class="glyph">✦</span>
+        <p>Authentication required to access the portal.</p>
+        <p class="auth-hint">Provide a JWT token via URL fragment or session.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="portal-auth.js"></script>
+  <script src="portal.js"></script>
+</body>
+</html>

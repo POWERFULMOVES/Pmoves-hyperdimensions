@@ -17,6 +17,7 @@ services:
       - ./index.html:/usr/share/nginx/html/index.html:ro
       - ./styles.css:/usr/share/nginx/html/styles.css:ro
       - ./saves:/usr/share/nginx/html/saves
+      - ./portal:/usr/share/nginx/html/portal:ro
     tmpfs:
       - /tmp
       - /var/cache/nginx

@@ -1,0 +1,294 @@
+/* DARKXSIDE Portal — Dark Theme */
+
+:root {
+  --darkxside-primary: #E11D48;
+  --darkxside-accent: #FB7185;
+  --pmoves-dark: #1a1a2e;
+  --pmoves-darker: #0f0f1a;
+  --pmoves-gold: #F59E0B;
+  --claude-violet: #7C3AED;
+  --crush-sky: #0EA5E9;
+  --text-primary: #f0f0f0;
+  --text-secondary: rgba(240, 240, 240, 0.6);
+  --border: rgba(225, 29, 72, 0.3);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--pmoves-darker);
+  color: var(--text-primary);
+  font-family: 'Inter', 'SF Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+}
+
+#portal-root {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  grid-template-rows: 1fr;
+  height: 100vh;
+  gap: 0;
+  position: relative;
+}
+
+/* Three.js Viewer */
+#viewer-panel {
+  position: relative;
+  overflow: hidden;
+  background: var(--pmoves-dark);
+}
+
+#hyperdimensions-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--pmoves-dark);
+}
+
+/* Voice Panel */
+#voice-panel {
+  background: var(--pmoves-darker);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 20px;
+}
+
+#voice-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+#voice-header .glyph {
+  font-size: 24px;
+  color: var(--darkxside-primary);
+  text-shadow: 0 0 12px rgba(225, 29, 72, 0.5);
+}
+
+#voice-header .title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  flex: 1;
+}
+
+.status {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status.disconnected {
+  background: rgba(225, 29, 72, 0.2);
+  color: var(--darkxside-primary);
+}
+
+.status.connecting {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--pmoves-gold);
+}
+
+.status.connected {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10B981;
+}
+
+/* Prosodic Overlay */
+#prosodic-overlay {
+  background: rgba(26, 26, 46, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#boundary-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#boundary-type {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--darkxside-primary);
+  letter-spacing: 2px;
+}
+
+#boundary-bpm {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+#beat-meter {
+  height: 4px;
+  background: rgba(225, 29, 72, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+#beat-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--darkxside-primary);
+  box-shadow: 0 0 8px rgba(225, 29, 72, 0.6);
+  transition: width 0.1s linear;
+}
+
+#note-display {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Buttons */
+.portal-btn {
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.portal-btn:hover:not(:disabled) {
+  background: rgba(225, 29, 72, 0.1);
+  border-color: var(--darkxside-primary);
+}
+
+.portal-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.portal-btn.primary {
+  background: var(--darkxside-primary);
+  border-color: var(--darkxside-primary);
+  color: white;
+  font-weight: 600;
+}
+
+.portal-btn.primary:hover:not(:disabled) {
+  background: #be123c;
+}
+
+.portal-btn.capture {
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+#voice-controls,
+#capture-controls {
+  display: flex;
+  gap: 8px;
+}
+
+#capture-controls {
+  flex-wrap: wrap;
+}
+
+/* DARKXSIDE HUD */
+#darkxside-hud {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: rgba(15, 15, 26, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hud-glyph {
+  font-size: 20px;
+  color: var(--darkxside-primary);
+  text-shadow: 0 0 10px rgba(225, 29, 72, 0.6);
+  animation: hud-pulse 6s ease-in-out infinite;
+}
+
+.hud-label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--darkxside-accent);
+  text-transform: uppercase;
+}
+
+@keyframes hud-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  30% { opacity: 1; transform: scale(1.1); }
+  60% { opacity: 0.8; transform: scale(1.05); }
+}
+
+/* Auth Overlay */
+#auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 26, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#auth-overlay.hidden {
+  display: none;
+}
+
+.auth-message {
+  text-align: center;
+  max-width: 400px;
+}
+
+.auth-message .glyph {
+  font-size: 48px;
+  color: var(--darkxside-primary);
+  display: block;
+  margin-bottom: 20px;
+  text-shadow: 0 0 20px rgba(225, 29, 72, 0.5);
+}
+
+.auth-message p {
+  font-size: 16px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.auth-message .auth-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  #portal-root {
+    grid-template-columns: 1fr;
+    grid-template-rows: 60vh 40vh;
+  }
+
+  #voice-panel {
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+}
