@@ -98,5 +98,13 @@
     {
         "file": "taylor.json",
         "name": "Taylor Surface"
+    },
+    {
+        "file": "chit_manifold.json",
+        "name": "⚡ CHIT Manifold"
+    },
+    {
+        "file": "beats_constellation.json",
+        "name": "🎵 Beats Constellation (DARKXSIDE)"
     }
 ]
