@@ -1193,7 +1193,10 @@ function surface(input) {
                         return res.json();
                     })
                     .then((list) => {
-                        if (!Array.isArray(list)) return;
+                        if (!Array.isArray(list)) {
+                            loadPresetSelect.innerHTML = '<option value="">Saves list unavailable</option>';
+                            return;
+                        }
                         loadPresetSelect.innerHTML = '';
                         list.forEach((item) => {
                             if (!item || typeof item !== 'object') return;
@@ -1216,7 +1219,8 @@ function surface(input) {
                         }
                     })
                     .catch((err) => {
-                        console.error(err);
+                        console.error('Failed to load saves list:', err);
+                        loadPresetSelect.innerHTML = '<option value="">Could not load saves list</option>';
                     });
             }
 
@@ -1251,21 +1255,44 @@ function surface(input) {
                 loadPresetBtn.addEventListener('click', () => {
                     const file = loadPresetSelect.value;
                     if (!file) return;
-                    fetch('saves/' + file)
-                        .then((res) => {
-                            if (!res.ok) throw new Error('Failed to load preset');
-                            return res.json();
-                        })
-                        .then((cfg) => {
-                            currentLoadedFile = file;
-                            applyConfig(cfg);
-                            hideHeaderPanels();
-                        })
-                        .catch((err) => {
-                            console.error(err);
-                            alert('Failed to load preset save file.');
-                        });
+                    loadPresetFromFile(file);
                 });
+            }
+
+            function loadPresetFromFile(file) {
+                // Guard against path traversal / arbitrary fetch via ?preset= — only allow plain save filenames.
+                if (!/^[\w-]+\.json$/.test(file)) {
+                    console.error('loadPresetFromFile: rejected unsafe preset name:', file);
+                    return;
+                }
+                fetch('saves/' + file)
+                    .then((res) => {
+                        if (!res.ok) throw new Error('Failed to load preset');
+                        return res.json();
+                    })
+                    .then((cfg) => {
+                        currentLoadedFile = file;
+                        applyConfig(cfg);
+                        if (cfg.surface && cfg.surface.code) {
+                            editor.setValue(cfg.surface.code);
+                            applySurface();
+                        }
+                        hideHeaderPanels();
+                    })
+                    .catch((err) => {
+                        console.error('loadPresetFromFile failed:', err);
+                        // In embed mode (?ui=none) a blocking alert() fires inside a
+                        // pointer-events:none iframe the user can't dismiss — fall back
+                        // silently to the default surface instead.
+                        if (isEmbedMode) {
+                            fetch('saves/nautilus.json')
+                                .then((res) => (res.ok ? res.json() : null))
+                                .then((cfg) => { if (cfg) applyConfig(cfg); else updateGeometry(); })
+                                .catch(() => updateGeometry());
+                        } else {
+                            alert('Failed to load preset "' + file + '".');
+                        }
+                    });
             }
 
             // Helper to parse numbers from inputs
@@ -2115,19 +2142,36 @@ function surface(input) {
                 isCameraTweening = true;
             });
 
-            // Load nautilus by default on startup
-            fetch('saves/nautilus.json')
-                .then((res) => {
-                    if (!res.ok) throw new Error('Failed to load default surface');
-                    return res.json();
-                })
-                .then((cfg) => {
-                    applyConfig(cfg);
-                })
-                .catch((err) => {
-                    console.error('Failed to load default surface:', err);
-                    updateGeometry();
-                });
+            const embedParams = new URLSearchParams(window.location.search);
+            const isEmbedMode = embedParams.get('ui') === 'none';
+            const presetQuery = embedParams.get('preset');
+
+            if (isEmbedMode) {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) sidebar.style.display = 'none';
+                const viewportDiv = document.getElementById('viewport');
+                if (viewportDiv) viewportDiv.style.left = '0';
+                const resetBtn = document.getElementById('resetCamera');
+                if (resetBtn) resetBtn.style.display = 'none';
+            }
+
+            if (presetQuery) {
+                loadPresetFromFile(presetQuery);
+            } else {
+                // Load nautilus by default on startup if no preset
+                fetch('saves/nautilus.json')
+                    .then((res) => {
+                        if (!res.ok) throw new Error('Failed to load default surface');
+                        return res.json();
+                    })
+                    .then((cfg) => {
+                        applyConfig(cfg);
+                    })
+                    .catch((err) => {
+                        console.error('Failed to load default surface:', err);
+                        updateGeometry();
+                    });
+            }
         }
 
         setupUI();
