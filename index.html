@@ -1779,6 +1779,56 @@ function surface(input) {
             function applyConfig(cfg) {
                 if (!cfg || typeof cfg !== 'object') return;
 
+                // --- Backward-compat shim: older "Save" format (schema B) ---
+                // Older exports (and the PMOVES presets: chit_manifold + the topology
+                // saves) stored a FLAT shape — surfaceFn / params / camera /
+                // animatedParams / surfaceInput / shininess / globalSaturation —
+                // instead of the current nested schema (surface.code / parameters /
+                // display.camera / extraParameters). Without this shim those presets
+                // fall through to the flat placeholder surface and render as a black
+                // canvas. Normalize schema B into schema A before reading below.
+                if (typeof cfg.surfaceFn === 'string' && !cfg.surface) {
+                    const animByName = {};
+                    (Array.isArray(cfg.animatedParams) ? cfg.animatedParams : []).forEach((p) => {
+                        if (p && typeof p.name === 'string') animByName[p.name] = p;
+                    });
+                    const si = (cfg.surfaceInput && typeof cfg.surfaceInput === 'object') ? cfg.surfaceInput : {};
+                    // Extra params = every surfaceInput key except the u,v surface coords,
+                    // taking the live value from surfaceInput and animation bounds from
+                    // animatedParams (whose `time` field maps to the new `runtime`).
+                    const extraParameters = Object.keys(si)
+                        .filter((k) => k !== 'u' && k !== 'v')
+                        .map((k) => {
+                            const a = animByName[k] || {};
+                            return {
+                                name: k,
+                                value: typeof si[k] === 'number' ? si[k] : (typeof a.value === 'number' ? a.value : a.min),
+                                min: a.min,
+                                max: a.max,
+                                step: a.step,
+                                runtime: typeof a.time === 'number' ? a.time : a.runtime,
+                            };
+                        });
+                    cfg = {
+                        surface: { code: cfg.surfaceFn },
+                        parameters: cfg.params || {},
+                        extraParameters,
+                        display: {
+                            camera: cfg.camera,
+                            autoRotate: cfg.autoRotate,
+                            showAxes: cfg.showAxes,
+                            showSurface: cfg.showSurface,
+                            showWireframe: cfg.showWireframe,
+                            dirIntensity: cfg.dirIntensity,
+                            ambientIntensity: cfg.ambientIntensity,
+                            shininess: cfg.shininess,
+                            globalSaturation: cfg.globalSaturation,
+                        },
+                        outputs: cfg.outputs || {},
+                        meta: cfg.meta,
+                    };
+                }
+
                 const toNum = (v, fallback) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 
                 const display = cfg.display || {};
