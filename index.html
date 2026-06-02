@@ -355,6 +355,33 @@ function surface(input) {
         controls.target.copy(initialTarget);
         controls.autoRotateSpeed = 5;
 
+        // Reframe the camera so the current mesh fits the viewport at any aspect,
+        // preserving the authored viewing *direction*. Preset cameras (display.camera)
+        // are tuned for a wide editor viewport and clip in narrow/square embed tiles;
+        // since we fit the bounding *sphere* around the orbit target, autoRotate never
+        // clips at any angle. Used in embed mode (?ui=none) — see loadPresetFromFile.
+        function fitCameraToObject(margin = 1.2) {
+            if (!mesh || !geometry) return;
+            geometry.computeBoundingSphere();
+            const sphere = geometry.boundingSphere;
+            if (!sphere || !Number.isFinite(sphere.radius) || sphere.radius <= 0) return;
+
+            // Preserve the authored viewing direction (preset camera relative to target);
+            // mesh carries no transform, so the geometry sphere center is already world-space.
+            const dir = camera.position.clone().sub(controls.target);
+            if (dir.lengthSq() === 0) dir.set(1, 1, 1);
+            dir.normalize();
+
+            // Fit the sphere within BOTH vertical and horizontal FOV (the tighter binds).
+            const vFov = THREE.MathUtils.degToRad(camera.fov);
+            const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+            const distance = (sphere.radius / Math.sin(Math.min(vFov, hFov) / 2)) * margin;
+
+            controls.target.copy(sphere.center);
+            camera.position.copy(sphere.center).addScaledVector(dir, distance);
+            controls.update();
+        }
+
         // --- Geometry Generation ---
         
         let mesh;
@@ -1277,6 +1304,9 @@ function surface(input) {
                             editor.setValue(cfg.surface.code);
                             applySurface();
                         }
+                        // In embed tiles the preset camera clips; reframe to fit the
+                        // freshly-built mesh for the actual (narrow/square) aspect.
+                        if (isEmbedMode) fitCameraToObject();
                         hideHeaderPanels();
                     })
                     .catch((err) => {
@@ -2153,6 +2183,10 @@ function surface(input) {
                 if (viewportDiv) viewportDiv.style.left = '0';
                 const resetBtn = document.getElementById('resetCamera');
                 if (resetBtn) resetBtn.style.display = 'none';
+                // The viewport just widened to full-bleed; recompute aspect before the
+                // preset's fit runs, and re-fit whenever the tile is resized.
+                resizeRendererToViewport();
+                window.addEventListener('resize', () => fitCameraToObject());
             }
 
             if (presetQuery) {
