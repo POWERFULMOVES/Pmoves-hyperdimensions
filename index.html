@@ -1807,6 +1807,7 @@ function surface(input) {
                                 max: a.max,
                                 step: a.step,
                                 runtime: typeof a.time === 'number' ? a.time : a.runtime,
+                                playing: a.playing === true,
                             };
                         });
                     cfg = {
@@ -1941,6 +1942,14 @@ function surface(input) {
                     state.sliderInput.max = String(maxVal);
                     state.sliderInput.value = String(val);
                     state.sliderInput.step = String(stepVal);
+
+                    // Auto-animate: presets can mark a param `"playing": true` so its
+                    // time-evolution starts on load (the whole point of the viewer —
+                    // surfaces that move). Reuse the play button's start logic by
+                    // toggling it (state starts paused, so one click begins playback).
+                    if (item.playing === true && state.playButton && !state.playing) {
+                        state.playButton.click();
+                    }
                 });
 
                 const outputs = cfg.outputs || {};
