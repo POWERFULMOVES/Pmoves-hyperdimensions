@@ -535,8 +535,17 @@ function surface(input) {
                     surfaceInput.u = u_norm;
                     surfaceInput.v = v_norm;
 
-                    const res = surfaceFn(surfaceInput) || {};
-                    
+                    // Guard the per-sample surface call: a preset that throws for
+                    // any (u,v) (div-by-zero, undefined param, bad Math) must not
+                    // abort the whole geometry build — that leaves a blank canvas.
+                    // Fall back to origin/white for the failing sample and keep going.
+                    let res;
+                    try {
+                        res = surfaceFn(surfaceInput) || {};
+                    } catch (e) {
+                        res = {};
+                    }
+
                     // Direct access to avoid object creation
                     let x = Number.isFinite(res.x) ? res.x : 0;
                     let y = Number.isFinite(res.y) ? res.y : 0;
@@ -1898,7 +1907,11 @@ function surface(input) {
                 const code = typeof surfaceCfg.code === 'string' && surfaceCfg.code.trim().length ? surfaceCfg.code : surface.toString();
                 editor.setValue(code);
                 editor.refresh();
-                lastAppliedCode = code;
+                // Only mark the code as "applied" + clear the error AFTER the preset's
+                // surface actually compiles. Doing it before (the old behavior) meant a
+                // broken preset silently fell back to the flat placeholder surface with
+                // no error shown — i.e. a blank hologram with no diagnostic.
+                let surfaceErr = '';
                 try {
                     const factory = new Function(code + '; return surface;');
                     const fn = factory();
@@ -1909,16 +1922,22 @@ function surface(input) {
                             fn(testInput);
                         } catch (innerErr) {
                             console.warn('Surface function test failed:', innerErr);
+                            surfaceErr = 'Preset surface threw on a sample input: ' +
+                                (innerErr && innerErr.message ? innerErr.message : 'unknown error');
                         }
                     } else {
                         surfaceFn = surface;
+                        surfaceErr = 'Preset surface did not define a surface() function.';
                     }
                 } catch (err) {
                     console.error('Failed to compile surface function:', err);
                     surfaceFn = surface;
+                    surfaceErr = 'Preset surface failed to compile: ' +
+                        (err && err.message ? err.message : 'unknown error');
                 }
 
-                setSurfaceError('');
+                lastAppliedCode = code;
+                setSurfaceError(surfaceErr);
                 updateSurfaceButtonsState();
                 scheduleGeometryUpdate();
                 updateGlobalControlsVisibility();
