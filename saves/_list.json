@@ -100,6 +100,18 @@
         "name": "Taylor Surface"
     },
     {
+        "file": "beats_c1.json",
+        "name": "Beats Cluster 1 (Allegro Bright)"
+    },
+    {
+        "file": "beats_c3.json",
+        "name": "Beats Cluster 3 (Allegro Deep)"
+    },
+    {
+        "file": "beats_c5.json",
+        "name": "Beats Cluster 5 (808 Signs)"
+    },
+    {
         "file": "chit_manifold.json",
         "name": "CHIT Manifold"
     },
