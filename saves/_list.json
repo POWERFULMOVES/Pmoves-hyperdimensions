@@ -158,5 +158,13 @@
     {
         "file": "Pmoves-hyperdimensions_topology.json",
         "name": "Pmoves-hyperdimensions Topology (HD)"
+    },
+    {
+        "file": "sea_urchin.json",
+        "name": "Sea Urchin"
+    },
+    {
+        "file": "alien_artifact.json",
+        "name": "Alien Artifact"
     }
 ]
