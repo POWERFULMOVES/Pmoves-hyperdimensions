@@ -317,6 +317,14 @@ function surface(input) {
         let coordConversionMode = 'none'; // 'none' | 'spherical' | 'cylindrical'
         let convertRgbToHsv = false;
         let globalSaturation = 1.5;
+        const startupSearchParams = new URLSearchParams(window.location.search);
+        const startupSaveUrl = startupSearchParams.get('saveUrl');
+        const startupSaveFile = startupSearchParams.get('saveFile');
+        const startupFallbackSave = startupSearchParams.get('fallbackSave') || 'saves/nautilus.json';
+        const startupLiveRoom = startupSearchParams.get('liveRoom');
+        let liveRoomSocket = null;
+        let liveRoomReconnectTimer = null;
+        let liveRoomReconnectDelay = 1000;
 
 
         function formatScalar(value) {
@@ -1159,6 +1167,46 @@ function surface(input) {
             const loadPresetSelect = document.getElementById('loadPreset');
             const loadPresetBtn = document.getElementById('loadPresetBtn');
 
+            function isExternalSavePath(value) {
+                return typeof value === 'string' && /^(?:[a-z]+:)?\/\//i.test(value);
+            }
+
+            function resolveSavePath(value) {
+                if (!value || typeof value !== 'string') return '';
+                if (
+                    value.startsWith('/') ||
+                    value.startsWith('./') ||
+                    value.startsWith('../') ||
+                    value.startsWith('saves/') ||
+                    isExternalSavePath(value)
+                ) {
+                    return value;
+                }
+                return 'saves/' + value;
+            }
+
+            function loadConfigFromUrl(sourceUrl, options = {}) {
+                const url = resolveSavePath(sourceUrl);
+                const label = options.label || sourceUrl || currentLoadedFile;
+                const silent = options.silent === true;
+                if (!url) {
+                    return Promise.reject(new Error('Missing save URL'));
+                }
+                return fetch(url)
+                    .then((res) => {
+                        if (!res.ok) throw new Error('Failed to load save config');
+                        return res.json();
+                    })
+                    .then((cfg) => {
+                        currentLoadedFile = label;
+                        applyConfig(cfg);
+                        if (!silent) {
+                            hideHeaderPanels();
+                        }
+                        return cfg;
+                    });
+            }
+
             function setFooterCancelVisible(visible) {
                 if (!saveBtn || !loadBtn || !cancelPanelsBtn) return;
                 saveBtn.style.display = visible ? 'none' : '';
@@ -1251,16 +1299,7 @@ function surface(input) {
                 loadPresetBtn.addEventListener('click', () => {
                     const file = loadPresetSelect.value;
                     if (!file) return;
-                    fetch('saves/' + file)
-                        .then((res) => {
-                            if (!res.ok) throw new Error('Failed to load preset');
-                            return res.json();
-                        })
-                        .then((cfg) => {
-                            currentLoadedFile = file;
-                            applyConfig(cfg);
-                            hideHeaderPanels();
-                        })
+                    loadConfigFromUrl(file, { label: file })
                         .catch((err) => {
                             console.error(err);
                             alert('Failed to load preset save file.');
@@ -1986,6 +2025,151 @@ function surface(input) {
                 });
             }
 
+            function loadStartupConfig() {
+                const fallbackLoad = () => loadConfigFromUrl(startupFallbackSave, {
+                    label: startupFallbackSave,
+                    silent: true,
+                });
+
+                if (startupSaveUrl) {
+                    return loadConfigFromUrl(startupSaveUrl, {
+                        label: startupSaveFile || startupSaveUrl,
+                        silent: true,
+                    }).catch((err) => {
+                        console.error('Failed to load startup save URL:', err);
+                        return fallbackLoad();
+                    });
+                }
+
+                if (startupSaveFile) {
+                    return loadConfigFromUrl(startupSaveFile, {
+                        label: startupSaveFile,
+                        silent: true,
+                    }).catch((err) => {
+                        console.error('Failed to load startup save file:', err);
+                        return fallbackLoad();
+                    });
+                }
+
+                return loadConfigFromUrl('saves/nautilus.json', {
+                    label: 'nautilus.json',
+                    silent: true,
+                });
+            }
+
+            function liveRoomSocketUrl(room) {
+                if (!room) return '';
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                return protocol + '//' + window.location.host + '/ws/signaling/' + encodeURIComponent(room);
+            }
+
+            function scheduleLiveRoomReconnect() {
+                if (!startupLiveRoom || liveRoomReconnectTimer) return;
+                const delay = liveRoomReconnectDelay;
+                liveRoomReconnectTimer = window.setTimeout(() => {
+                    liveRoomReconnectTimer = null;
+                    connectLiveRoom();
+                }, delay);
+                liveRoomReconnectDelay = Math.min(liveRoomReconnectDelay * 2, 15000);
+            }
+
+            function handleLiveRoomPayload(payload) {
+                if (!payload || typeof payload !== 'object') return;
+
+                if (payload.type === 'hyperdimensions.save.v1' && payload.config && typeof payload.config === 'object') {
+                    currentLoadedFile = payload.label || currentLoadedFile;
+                    applyConfig(payload.config);
+                    return;
+                }
+
+                if (payload.type === 'load_config' && payload.config && typeof payload.config === 'object') {
+                    currentLoadedFile = payload.label || currentLoadedFile;
+                    applyConfig(payload.config);
+                    return;
+                }
+
+                if (payload.type === 'load_config_url' && payload.url) {
+                    loadConfigFromUrl(payload.url, {
+                        label: payload.label || payload.url,
+                        silent: true,
+                    }).catch((err) => {
+                        console.error('Failed to load config from live room URL:', err);
+                    });
+                }
+            }
+
+            function connectLiveRoom() {
+                if (!startupLiveRoom) return;
+                if (liveRoomSocket && (liveRoomSocket.readyState === WebSocket.OPEN || liveRoomSocket.readyState === WebSocket.CONNECTING)) {
+                    return;
+                }
+
+                const url = liveRoomSocketUrl(startupLiveRoom);
+                if (!url) return;
+
+                try {
+                    liveRoomSocket = new WebSocket(url);
+                } catch (err) {
+                    console.error('Failed to create live room socket:', err);
+                    scheduleLiveRoomReconnect();
+                    return;
+                }
+
+                liveRoomSocket.addEventListener('open', () => {
+                    liveRoomReconnectDelay = 1000;
+                    try {
+                        liveRoomSocket.send(JSON.stringify({
+                            type: 'presence',
+                            from: 'hyperdimensions-live-viewer',
+                        }));
+                    } catch (err) {
+                        console.error('Failed to send live room presence:', err);
+                    }
+                });
+
+                liveRoomSocket.addEventListener('message', (event) => {
+                    try {
+                        const payload = JSON.parse(event.data);
+                        if (payload && typeof payload === 'object' && payload.relay && typeof payload.relay === 'object') {
+                            handleLiveRoomPayload(payload.relay);
+                            return;
+                        }
+                        handleLiveRoomPayload(payload);
+                    } catch (err) {
+                        console.error('Failed to parse live room message:', err);
+                    }
+                });
+
+                liveRoomSocket.addEventListener('close', () => {
+                    liveRoomSocket = null;
+                    scheduleLiveRoomReconnect();
+                });
+
+                liveRoomSocket.addEventListener('error', (err) => {
+                    console.error('Live room socket error:', err);
+                });
+            }
+
+            window.addEventListener('message', (event) => {
+                const data = event.data;
+                if (!data || typeof data !== 'object') return;
+
+                if (data.type === 'load_config' && data.config && typeof data.config === 'object') {
+                    currentLoadedFile = data.label || currentLoadedFile;
+                    applyConfig(data.config);
+                    return;
+                }
+
+                if (data.type === 'load_config_url' && data.url) {
+                    loadConfigFromUrl(data.url, {
+                        label: data.label || data.url,
+                        silent: true,
+                    }).catch((err) => {
+                        console.error('Failed to load config from message URL:', err);
+                    });
+                }
+            });
+
             const resetButton = document.getElementById('resetCamera');
             resetButton.addEventListener('click', () => {
                 camera.position.copy(initialCameraPosition);
@@ -2115,19 +2299,12 @@ function surface(input) {
                 isCameraTweening = true;
             });
 
-            // Load nautilus by default on startup
-            fetch('saves/nautilus.json')
-                .then((res) => {
-                    if (!res.ok) throw new Error('Failed to load default surface');
-                    return res.json();
-                })
-                .then((cfg) => {
-                    applyConfig(cfg);
-                })
+            loadStartupConfig()
                 .catch((err) => {
-                    console.error('Failed to load default surface:', err);
+                    console.error('Failed to load startup surface:', err);
                     updateGeometry();
                 });
+            connectLiveRoom();
         }
 
         setupUI();

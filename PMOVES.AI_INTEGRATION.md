@@ -1,6 +1,6 @@
 # PMOVES.AI Integration Dossier
 
-_Last updated: 2026-04-04_
+_Last updated: 2026-04-28_
 
 ## Module
 - Name: Pmoves-hyperdimensions
@@ -11,18 +11,19 @@ _Last updated: 2026-04-04_
 
 ## PMOVES Overlay Surface
 - pmoves-integrations/ overlay path (if used): _TBD_
-- Compose/profile wiring: _TBD_
+- Compose/profile wiring: served by `pmoves/services/hi-rag-gateway-v2` at `/hyperdimensions/app`
 - Env/secret inputs: _TBD_
 - Auth/JWT requirements: _TBD_
 
 ## Contracts and Topics
-- NATS subjects (if any): _TBD_
+- NATS subjects (if any): `geometry.cgp.v1`, `content.hirag.accepted.v1`
 - Supabase schema/tables touched (if any): _TBD_
-- MCP endpoints/skills (if any): _TBD_
+- MCP endpoints/skills (if any): gateway surfaces `/hyperdimensions/provenance/latest.json` and `/hyperdimensions/provenance/view`
+- Live refresh path: viewer joins `/ws/signaling/geometry` and listens for `hyperdimensions.save.v1`
 
 ## Boot Order and Health
-- Bring-up dependency order: _TBD_
-- Health endpoints: _TBD_
+- Bring-up dependency order: `hi-rag-gateway-v2` first, then any `content.hirag.accepted.v1` producers
+- Health endpoints: inherit `hi-rag-gateway-v2` health plus live provenance view at `/hyperdimensions/provenance/view`
 - Smoke targets: _TBD_
 
 ## Hardening Notes
