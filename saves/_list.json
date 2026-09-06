@@ -13,7 +13,7 @@
     },
     {
         "file": "mobius_strip.json",
-        "name": "Möbius Strip"
+        "name": "M\u00f6bius Strip"
     },
     {
         "file": "klein_bottle.json",
@@ -166,5 +166,9 @@
     {
         "file": "alien_artifact.json",
         "name": "Alien Artifact"
+    },
+    {
+        "file": "joint_coverage.json",
+        "name": "Joint Coverage (2026-09-06)"
     }
 ]
